@@ -34,7 +34,8 @@ export interface MainMenuWarehouseItem {
     rarity:
         | 'common'
         | 'rare'
-        | 'epic';
+        | 'epic'
+        | 'legendary';
 }
 
 export interface MainMenuStageChestState {

@@ -5,7 +5,7 @@ import {
 
 import {
     ItemId,
-} from '../../item/definition/ItemTypes';
+} from '../../storage/item/definition/ItemTypes';
 
 export interface DropRange {
     min: number;

@@ -39,10 +39,14 @@ $requiredFiles = @(
     'assets/scenes/Battle.scene',
     'assets/scripts/core/bootstrap/GameBootstrap.ts',
     'assets/scripts/systems/audio/AudioManager.ts',
-    'assets/scripts/systems/character/data/CharacterCatalog.ts',
-    'assets/scripts/systems/profession/definition/ProfessionCatalog.ts',
-    'assets/scripts/systems/character/player/MainHeroController.ts',
-    'assets/scripts/systems/character/companion/CompanionBattleController.ts',
+    'assets/scripts/systems/hero/character/data/CharacterCatalog.ts',
+    'assets/scripts/systems/hero/profession/definition/ProfessionCatalog.ts',
+    'assets/scripts/systems/hero/skill/data/ProfessionSkillCatalog.ts',
+    'assets/scripts/systems/hero/skill/runtime/HeroSkillRuntime.ts',
+    'assets/scripts/systems/hero/skill/runtime/ProfessionSkillRunState.ts',
+    'assets/scripts/systems/hero/skill/upgrade/HeroSkillUpgradeService.ts',
+    'assets/scripts/systems/hero/character/player/MainHeroController.ts',
+    'assets/scripts/systems/hero/character/companion/CompanionBattleController.ts',
     'assets/scripts/systems/battle/targeting/BattleTargetRegistry.ts',
     'assets/scripts/systems/feature/pause/BattlePauseService.ts',
     'assets/scripts/ui/panels/battle-pause/BattlePausePanel.ts',
@@ -53,6 +57,7 @@ $requiredFiles = @(
     'docs/development/PROJECT-RULES.md',
     'docs/DEVELOPMENT-PLAN.md',
     'scripts/github/check-project.ps1',
+    'scripts/migrations/v0.6.1-expected-deletions.txt',
     'push-tonight-defense.ps1',
     'TonightDefense-GitHub.bat',
     '.github/workflows/safety.yml'
@@ -98,6 +103,9 @@ if (Test-Path -LiteralPath $pushHelper -PathType Leaf) {
     }
     if ($pushText -notmatch 'function\s+Invoke-GitProbe') {
         Add-Failure $failures 'GitHub helper 缺少 Invoke-GitProbe；Windows PowerShell 5.1 可能把 Git stderr 探测误判为终止异常。'
+    }
+    if ($pushText -notmatch 'function\s+Get-PlannedMigrationDeletionMap') {
+        Add-Failure $failures 'GitHub helper 缺少版本化结构迁移删除清单支持；目录重构会被删除保护误拦截。'
     }
     if ($pushText -match '\$origin\s*=\s*&\s*git\s+remote\s+get-url\s+origin') {
         Add-Failure $failures '禁止直接用 git remote get-url origin 探测 origin；首次仓库没有 origin 时会触发 NativeCommandError。'
@@ -160,7 +168,23 @@ $audioManagers = @(Get-ChildItem -LiteralPath (Join-Path $ProjectRoot 'assets\sc
 if ($audioManagers.Count -ne 1) { Add-Failure $failures ('AudioManager.ts 数量应为 1，当前：' + $audioManagers.Count) }
 
 Write-Step '已知回归保护'
-$companionPath = Join-Path $ProjectRoot 'assets\scripts\systems\character\companion\CompanionBattleController.ts'
+# v0.6.1 系统域收口后，旧顶层目录不得重新出现。
+$legacySystemRoots = @(
+    'assets\scripts\systems\character',
+    'assets\scripts\systems\profession',
+    'assets\scripts\systems\skill',
+    'assets\scripts\systems\progression',
+    'assets\scripts\systems\inventory',
+    'assets\scripts\systems\item',
+    'assets\scripts\systems\warehouse'
+)
+foreach ($legacyRoot in $legacySystemRoots) {
+    if (Test-Path -LiteralPath (Join-Path $ProjectRoot $legacyRoot)) {
+        Add-Failure $failures ('旧系统根目录回归：' + $legacyRoot + '；v0.6.1 后应归入 hero/ 或 storage/。')
+    }
+}
+
+$companionPath = Join-Path $ProjectRoot 'assets\scripts\systems\hero\character\companion\CompanionBattleController.ts'
 if (Test-Path -LiteralPath $companionPath) {
     $companionText = Get-Content -LiteralPath $companionPath -Raw -Encoding UTF8
     if ($companionText -match '\bstatProfile\b') {

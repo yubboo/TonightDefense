@@ -4,7 +4,7 @@ import {
 
 import {
     InventoryService,
-} from '../inventory/runtime/InventoryService';
+} from '../storage/inventory/runtime/InventoryService';
 
 import {
     StaminaService,

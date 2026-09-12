@@ -1,64 +1,46 @@
 # TonightDefense 开发计划
 
-## Phase A：冻结可复现源码基线（已完成）
+## Phase A：源码基线与工程治理（持续）
 
-- GitHub Private 仓库；
-- `.gitignore` / GitHub 一键推送；
-- Safety Gate；
-- GitHub main 成为稳定源码事实来源；
-- 不再用不同 ZIP 工作目录互相覆盖形成“混合版本”。
+v0.6.1 完成第一次系统域收口：Hero、Storage、Battle、Level、Feature 等职责按业务域归档；根目录只保留真正项目入口/工具。后续新增模块优先进入现有域，不恢复 `systems/character`、`systems/skill`、`systems/inventory` 等平铺旧目录。
 
-冻结条件：首次完整源码 push 成功，GitHub Actions 绿色；本地重新 clone 后 Cocos Creator 3.8.8 能重新导入项目。
+## Phase B：英雄大系统（v0.6.1 当前重点）
 
-## Phase B：战斗核心闭环稳定（v0.6.0 已形成首个完整闭环）
+- Character：人物身份唯一来源。
+- Profession：职业基础属性与攻击模型。
+- Skill：每职业 1 被动 + 4 自动主动技能。
+- Progression：招募、经验、局内三选一技能成长。
+- Equipment：英雄穿戴关系与战斗属性修正。
+- MainMenu Hero Warehouse：人物 / 职业 / 技能 / 培养 / 装备统一入口。
 
-- Hero/AI Hero 统一系统；
-- 招募 -> 生成 -> 战斗 -> 阵亡 -> 雕像持续复活 -> 重新参战；
-- 怪物目标优先级；
-- 暂停/继续/重开/回大厅；
-- 路线 B 地图边界、镜头和泉水刷怪。
+v0.6.1 已建立职业技能自动释放与 Lv1~Lv5 三选一骨架；下一步增加统一 CombatEvent / EnemyStatus，把坦克叠层、游侠印记、嘲讽、冻结、减速等高级状态正式数据化结算。
 
-冻结条件：连续多局编辑器预览无异常；微信开发者工具无错误风暴；真机移动/AI/暂停可用。
+## Phase C：战斗核心与空间
 
-## Phase C：战斗空间与手感
+继续保护现有 Hero/AI Hero、招募、复活、防线、波次和 Boss 闭环；AI Hero 只在主战场 + 防守区活动，主角可以主动进入上方危险区。任何技能扩展都不能重新复制 Enemy/Target/Health 系统。
 
-- 上半区怪物出没 + 前线交战；
-- 中间主战场；
-- 下半区英雄复活位、雕像、城墙、公主；
-- AI Hero 不进入泉水区单挑；
-- 坦克/近战/远程/辅助职业站位逐步差异化。
+## Phase D：正式 UI / 美术
 
-## Phase D：正式战斗 UI（v0.6.0 首批资源已落地）
-
-- 顶部关卡/波次/怪物信息；
-- 防线状态；
-- 五人角色栏：伙伴1 / 伙伴2 / 主角 / 伙伴3 / 伙伴4；
-- 左摇杆 + 右侧主角四技能指令区；
-- 暂停/设置统一弹窗；
-- 冷却/阵亡/复活/能量传输反馈。
-
-v0.6.0 已把地图、塔、城墙、公主、顶部 HUD、横向人物卡框和炎诀少年四技能图标接入 Sprite；同时接入主动技能冷却、能量和可用性反馈。下一步是补齐全角色正式头像/动画，并做 3.8.8 编辑器和微信真机视觉调优。
+- 战斗 HUD 继续读取 Runtime，不保存业务状态。
+- 主角右侧 4 技能位改为“自动技能状态”：锁定 / 等级 / 冷却。
+- 为全部职业补齐独立技能图标、预警和命中特效。
+- 英雄仓库逐步从真实 Catalog 概览升级为永久培养 UI。
+- 普通仓库继续展示真实 Inventory/Warehouse 数据，不混入英雄培养状态。
 
 ## Phase E：内容扩展
 
-- 新英雄、新职业、新技能；
-- 普通/精英/BOSS；
-- 关卡主题与资源；
-- 装备/培养/仓库/商店内容。
+新增英雄、职业、技能、敌人、Boss、地图、装备时，优先只扩 Catalog/Definition/素材，不复制 Runtime。职业技能新增必须遵循 `docs/design/HERO-PROFESSION-SKILLS.md`。
 
-新增内容必须通过 Catalog/Definition 数据入口，不复制一套新战斗系统。
+## Phase F：微信发布优化
 
-v0.6.0 已建立 `StageCatalog` 预算波次、四职业主动技能模板、装备穿戴/属性结算和存档 v2；后续内容只扩 Catalog 与素材，不重写运行时。
+- 分包与首包尺寸；
+- 30/60 FPS 真机基线；
+- 自动技能高频选敌的对象分配与 CPU 热点；
+- GC / 对象池；
+- 音频与触摸兼容；
+- 云存档；
+- 发布回归矩阵。
 
-## Phase F：微信小游戏发布优化
+## CI 计划
 
-- 包体与分包；
-- 真机 30/60 FPS；
-- GC/对象池/热路径；
-- 音频和触摸兼容；
-- 云函数/登录/存档；
-- 发布前回归矩阵。
-
-## 后续 CI 计划
-
-当前 GitHub Hosted Runner 只做源码静态验证。等 main 稳定后，在安装了 Cocos Creator 3.8.8 的 Windows 开发机配置 self-hosted Runner，再增加真实 Creator 构建 Gate；没有真实 Runner 证据前，不把“静态检查通过”描述成“Cocos 构建通过”。
+Hosted Runner 继续只做静态 Gate。未来在装有 Cocos Creator 3.8.8 的 Windows 开发机增加 self-hosted Runner，才允许增加真实 Creator Build Gate。

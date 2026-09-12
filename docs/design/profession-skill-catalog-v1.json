@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "status": "design-prototype",
+  "engine": "Cocos Creator 3.8.8",
+  "language": "TypeScript",
+  "project": "yubboo/TonightDefense",
+  "rules": {
+    "skillsPerProfession": 5,
+    "passiveCount": 1,
+    "activeCount": 4,
+    "maxSkillLevel": 5,
+    "activeCastMode": "AUTO_ON_COOLDOWN",
+    "choiceCount": 3,
+    "mainHeroProfessionWeight": 2.0,
+    "partnerProfessionWeight": 1.0,
+    "excludeMaxLevelSkills": true,
+    "allowUnrelatedProfessionSkills": false
+  },
+  "professions": [
+    {
+      "id": "warrior",
+      "name": "战士",
+      "role": "近战持续输出/半肉",
+      "skills": [
+        {
+          "id": "warrior_battle_fury",
+          "name": "战意沸腾",
+          "type": "PASSIVE"
+        },
+        {
+          "id": "warrior_whirlwind",
+          "name": "旋风斩",
+          "type": "ACTIVE",
+          "cooldown": 7,
+          "target": "AROUND_SELF"
+        },
+        {
+          "id": "warrior_earthsplitter",
+          "name": "裂地斩",
+          "type": "ACTIVE",
+          "cooldown": 9,
+          "target": "FRONT_LINE"
+        },
+        {
+          "id": "warrior_bloodrush_combo",
+          "name": "血怒连斩",
+          "type": "ACTIVE",
+          "cooldown": 10,
+          "target": "HIGHEST_HP_ENEMY"
+        },
+        {
+          "id": "warrior_warcry",
+          "name": "战吼",
+          "type": "ACTIVE",
+          "cooldown": 15,
+          "target": "ALL_ALLIES"
+        }
+      ]
+    },
+    {
+      "id": "tank",
+      "name": "坦克",
+      "role": "承伤/嘲讽/控制",
+      "skills": [
+        {
+          "id": "tank_iron_wall",
+          "name": "钢铁壁垒",
+          "type": "PASSIVE"
+        },
+        {
+          "id": "tank_shield_bash",
+          "name": "盾牌猛击",
+          "type": "ACTIVE",
+          "cooldown": 8,
+          "target": "FRONT_CONE"
+        },
+        {
+          "id": "tank_taunting_roar",
+          "name": "嘲讽怒吼",
+          "type": "ACTIVE",
+          "cooldown": 13,
+          "target": "AROUND_SELF"
+        },
+        {
+          "id": "tank_ground_stomp",
+          "name": "震地重踏",
+          "type": "ACTIVE",
+          "cooldown": 10,
+          "target": "AROUND_SELF"
+        },
+        {
+          "id": "tank_unyielding_bulwark",
+          "name": "不屈壁垒",
+          "type": "ACTIVE",
+          "cooldown": 16,
+          "target": "ALL_ALLIES"
+        }
+      ]
+    },
+    {
+      "id": "ranger",
+      "name": "游侠",
+      "role": "远程物理/穿透/标记",
+      "skills": [
+        {
+          "id": "ranger_hunters_mark",
+          "name": "猎人印记",
+          "type": "PASSIVE"
+        },
+        {
+          "id": "ranger_multishot",
+          "name": "多重箭",
+          "type": "ACTIVE",
+          "cooldown": 5,
+          "target": "FRONT_CONE"
+        },
+        {
+          "id": "ranger_piercing_arrow",
+          "name": "穿云箭",
+          "type": "ACTIVE",
+          "cooldown": 8,
+          "target": "FRONT_LINE"
+        },
+        {
+          "id": "ranger_arrow_rain",
+          "name": "箭雨",
+          "type": "ACTIVE",
+          "cooldown": 11,
+          "target": "DENSEST_ENEMY_CLUSTER"
+        },
+        {
+          "id": "ranger_hawkeye_snipe",
+          "name": "鹰眼狙击",
+          "type": "ACTIVE",
+          "cooldown": 12,
+          "target": "HIGHEST_HP_ENEMY"
+        }
+      ]
+    },
+    {
+      "id": "mage",
+      "name": "法师",
+      "role": "元素范围/控制",
+      "skills": [
+        {
+          "id": "mage_elemental_resonance",
+          "name": "元素共鸣",
+          "type": "PASSIVE"
+        },
+        {
+          "id": "mage_fireball",
+          "name": "火球术",
+          "type": "ACTIVE",
+          "cooldown": 5,
+          "target": "NEAREST_ENEMY"
+        },
+        {
+          "id": "mage_frost_nova",
+          "name": "冰霜新星",
+          "type": "ACTIVE",
+          "cooldown": 9,
+          "target": "DENSEST_ENEMY_CLUSTER"
+        },
+        {
+          "id": "mage_chain_lightning",
+          "name": "连锁闪电",
+          "type": "ACTIVE",
+          "cooldown": 7,
+          "target": "NEAREST_ENEMY"
+        },
+        {
+          "id": "mage_arcane_vortex",
+          "name": "奥术黑洞",
+          "type": "ACTIVE",
+          "cooldown": 14,
+          "target": "DENSEST_ENEMY_CLUSTER"
+        }
+      ]
+    },
+    {
+      "id": "support",
+      "name": "辅助",
+      "role": "治疗/护盾/增益",
+      "skills": [
+        {
+          "id": "support_guardian_aura",
+          "name": "守护灵光",
+          "type": "PASSIVE"
+        },
+        {
+          "id": "support_holy_heal",
+          "name": "圣愈术",
+          "type": "ACTIVE",
+          "cooldown": 7,
+          "target": "LOWEST_HP_ALLY"
+        },
+        {
+          "id": "support_guardian_shield",
+          "name": "守护之盾",
+          "type": "ACTIVE",
+          "cooldown": 9,
+          "target": "LOWEST_HP_ALLY"
+        },
+        {
+          "id": "support_battle_hymn",
+          "name": "战歌鼓舞",
+          "type": "ACTIVE",
+          "cooldown": 15,
+          "target": "ALL_ALLIES"
+        },
+        {
+          "id": "support_sanctuary",
+          "name": "生命圣域",
+          "type": "ACTIVE",
+          "cooldown": 16,
+          "target": "TEAM_CENTER"
+        }
+      ]
+    }
+  ]
+}

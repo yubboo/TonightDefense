@@ -15,27 +15,22 @@ import {
     Layers,
     Node,
     Sprite,
-    tween,
     UITransform,
-    Vec3,
 } from 'cc';
 
 import {
     CharacterDefinition,
-} from '../../systems/character/data/CharacterCatalog';
+} from '../../systems/hero/character/data/CharacterCatalog';
 
 import {
     CompanionBattleController,
     CompanionHudSnapshot,
-} from '../../systems/character/companion/CompanionBattleController';
+} from '../../systems/hero/character/companion/CompanionBattleController';
 
 import {
     MainHeroController,
-} from '../../systems/character/player/MainHeroController';
+} from '../../systems/hero/character/player/MainHeroController';
 
-import {
-    AudioManager,
-} from '../../systems/audio/AudioManager';
 
 import {
     HeroPortraitResolver,
@@ -65,22 +60,18 @@ interface PartyCardData {
     hpRatio: number;
 }
 
-export interface HeroSkillIntent {
-    slotIndex: number;
-}
-
 export interface HeroSkillState {
     cooldownRemaining: readonly number[];
-    energy: number;
-    maxEnergy: number;
+    cooldownTotal: readonly number[];
+    levels: readonly number[];
+    unlocked: readonly boolean[];
     names: readonly string[];
+    passiveName: string;
+    passiveLevel: number;
 }
 
 @ccclass('BattlePartyHUD')
 export class BattlePartyHUD extends Component {
-    static readonly SKILL_INTENT_EVENT =
-        'hero-skill-intent';
-
     static readonly SKILL_STATE_EVENT =
         'active-skill-state';
 
@@ -96,6 +87,9 @@ export class BattlePartyHUD extends Component {
         Node[] = [];
 
     private readonly skillCooldownLabels:
+        Label[] = [];
+
+    private readonly skillLevelLabels:
         Label[] = [];
 
     private skillDockTitle:
@@ -184,6 +178,7 @@ export class BattlePartyHUD extends Component {
         this.cards.length = 0;
         this.skillCooldownMasks.length = 0;
         this.skillCooldownLabels.length = 0;
+        this.skillLevelLabels.length = 0;
         this.skillDockTitle = null;
     }
 
@@ -595,7 +590,7 @@ export class BattlePartyHUD extends Component {
         this.skillDockTitle = this.createLabel(
             parent,
             'SkillDockTitle',
-            '主角战技 · 能量 100',
+            '自动战技 · 等待解锁',
             248,
             -338,
             14,
@@ -829,62 +824,31 @@ export class BattlePartyHUD extends Component {
                         new Color(255, 247, 220, 255),
                     );
 
-                cooldownMask.active = false;
+                cooldownMask.active = true;
+                cooldownLabel.string = '锁';
                 this.skillCooldownMasks.push(cooldownMask);
                 this.skillCooldownLabels.push(cooldownLabel);
 
-                button.on(
-                    Node.EventType
-                        .TOUCH_START,
-                    () => {
-                        button.setScale(
-                            0.92,
-                            0.92,
-                            1,
-                        );
-                    },
-                );
+                const levelLabel =
+                    this.createLabel(
+                        button,
+                        'SkillLevel',
+                        'Lv.0',
+                        0,
+                        -spec.radius - 11,
+                        11,
+                        spec.radius * 1.8,
+                        new Color(
+                            244,
+                            222,
+                            168,
+                            255,
+                        ),
+                    );
 
-                const release =
-                    () => {
-                        tween(button)
-                            .to(
-                                0.08,
-                                {
-                                    scale:
-                                        new Vec3(
-                                            1,
-                                            1,
-                                            1,
-                                        ),
-                                },
-                            )
-                            .start();
-                    };
+                this.skillLevelLabels.push(levelLabel);
 
-                button.on(
-                    Node.EventType
-                        .TOUCH_CANCEL,
-                    release,
-                );
-
-                button.on(
-                    Node.EventType
-                        .TOUCH_END,
-                    () => {
-                        release();
-                        AudioManager.playUi();
-
-                        this.node.emit(
-                            BattlePartyHUD
-                                .SKILL_INTENT_EVENT,
-                            {
-                                slotIndex:
-                                    index,
-                            } as HeroSkillIntent,
-                        );
-                    },
-                );
+                /* 主动技能由 SkillRuntime 自动施放；按钮仅显示状态。 */
             },
         );
     }
@@ -894,7 +858,7 @@ export class BattlePartyHUD extends Component {
     ): void {
         if (this.skillDockTitle) {
             this.skillDockTitle.string =
-                `主角战技 · 能量 ${Math.floor(state.energy)}/${state.maxEnergy}`;
+                `被动：${state.passiveName} Lv.${state.passiveLevel} · 自动施放`;
         }
 
         for (
@@ -902,13 +866,32 @@ export class BattlePartyHUD extends Component {
             i < this.skillCooldownMasks.length;
             i += 1
         ) {
+            const unlocked =
+                state.unlocked[i] ?? false;
+            const level =
+                state.levels[i] ?? 0;
             const remaining =
                 state.cooldownRemaining[i] ?? 0;
-            const active = remaining > 0.05;
 
-            this.skillCooldownMasks[i].active = active;
+            if (this.skillLevelLabels[i]) {
+                this.skillLevelLabels[i].string =
+                    unlocked
+                        ? `Lv.${level}`
+                        : '未解锁';
+            }
+
+            if (!unlocked) {
+                this.skillCooldownMasks[i].active = true;
+                this.skillCooldownLabels[i].string = '锁';
+                continue;
+            }
+
+            const cooling =
+                remaining > 0.05;
+
+            this.skillCooldownMasks[i].active = cooling;
             this.skillCooldownLabels[i].string =
-                active
+                cooling
                     ? remaining.toFixed(
                         remaining < 10 ? 1 : 0,
                     )

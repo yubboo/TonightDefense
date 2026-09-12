@@ -19,7 +19,7 @@ import {
 
 import {
     PreBattleHeroSelectionController,
-} from '../../systems/character/selection/PreBattleHeroSelectionController';
+} from '../../systems/hero/character/selection/PreBattleHeroSelectionController';
 
 import {
     ChapterWaveController,
@@ -27,7 +27,7 @@ import {
 
 import {
     HeroSelectionState,
-} from '../../systems/character/selection/HeroSelectionState';
+} from '../../systems/hero/character/selection/HeroSelectionState';
 
 import {
     BattleTargetRegistry,
@@ -35,7 +35,7 @@ import {
 
 import {
     GamePerformanceSettings,
-} from '../../systems/settings/GamePerformanceSettings';
+} from '../../systems/feature/settings/GamePerformanceSettings';
 
 import {
     AudioManager,
@@ -54,12 +54,16 @@ import {
 } from '../../ui/hud/BattlePartyHUD';
 
 import {
-    ActiveSkillRuntime,
-} from '../../systems/skill/active/ActiveSkillRuntime';
+    HeroSkillRuntime,
+} from '../../systems/hero/skill/runtime/HeroSkillRuntime';
+
+import {
+    ProfessionSkillRunState,
+} from '../../systems/hero/skill/runtime/ProfessionSkillRunState';
 
 import {
     StatusEffectSystem,
-} from '../../systems/skill/active/StatusEffectSystem';
+} from '../../systems/hero/skill/effect/StatusEffectSystem';
 
 import {
     BattleStatisticsService,
@@ -96,6 +100,9 @@ extends Component {
 
     start(): void {
         void BattleArt.preloadRequired();
+
+        /** 每次进入战斗都开启新的职业技能成长状态。 */
+        ProfessionSkillRunState.beginNewRun();
 
         GamePerformanceSettings
             .ensureApplied();
@@ -141,11 +148,11 @@ extends Component {
 
         if (
             !this.node.getComponent(
-                ActiveSkillRuntime,
+                HeroSkillRuntime,
             )
         ) {
             this.node.addComponent(
-                ActiveSkillRuntime,
+                HeroSkillRuntime,
             );
         }
 

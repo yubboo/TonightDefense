@@ -25,17 +25,21 @@ import {
 } from 'cc';
 
 import {
-    CompanionDefinition,
-} from '../../../systems/character/data/CompanionCatalog';
+    CharacterDefinition,
+} from '../../../systems/hero/character/data/CharacterCatalog';
 
 import {
     AudioManager,
 } from '../../../systems/audio/AudioManager';
 
+import {
+    getProfessionById,
+} from '../../../systems/hero/profession/definition/ProfessionCatalog';
+
 export interface RecruitChoiceCardOptions {
     parent: Node;
     companion:
-        CompanionDefinition;
+        CharacterDefinition;
     portrait:
         SpriteFrame | null;
     x: number;
@@ -43,7 +47,7 @@ export interface RecruitChoiceCardOptions {
     onSelect:
         (
             companion:
-                CompanionDefinition,
+                CharacterDefinition,
         ) => void;
 }
 
@@ -69,7 +73,7 @@ export class RecruitChoiceCard {
 
         const palette =
             this.getRolePalette(
-                companion.role,
+                this.getRole(companion),
             );
 
         const card =
@@ -119,7 +123,7 @@ export class RecruitChoiceCard {
 
         this.createRole(
             card,
-            companion.role,
+            this.getRole(companion),
             palette,
         );
 
@@ -386,7 +390,7 @@ export class RecruitChoiceCard {
     private static createPortraitArea(
         card: Node,
         companion:
-            CompanionDefinition,
+            CharacterDefinition,
         portrait:
             SpriteFrame | null,
         palette:
@@ -513,7 +517,7 @@ export class RecruitChoiceCard {
         holder:
             Node,
         companion:
-            CompanionDefinition,
+            CharacterDefinition,
         palette:
             RolePalette,
     ): void {
@@ -603,7 +607,7 @@ export class RecruitChoiceCard {
         g.fill();
 
         const role =
-            companion.role;
+            this.getRole(companion);
 
         if (
             role.includes(
@@ -1211,6 +1215,14 @@ export class RecruitChoiceCard {
             Label.Overflow.SHRINK;
 
         return label;
+    }
+
+    private static getRole(
+        companion: CharacterDefinition,
+    ): string {
+        return getProfessionById(
+            companion.professionId,
+        ).roleLabel;
     }
 
     private static getRolePalette(

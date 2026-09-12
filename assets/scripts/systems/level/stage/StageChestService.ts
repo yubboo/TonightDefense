@@ -1,6 +1,6 @@
 import {
     WarehouseRepository,
-} from '../../warehouse/repository/WarehouseRepository';
+} from '../../storage/warehouse/repository/WarehouseRepository';
 
 import {
     RewardService,

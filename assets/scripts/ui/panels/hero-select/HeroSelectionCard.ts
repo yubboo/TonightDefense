@@ -24,11 +24,11 @@ import {
 
 import {
     CharacterDefinition,
-} from '../../../systems/character/data/CharacterCatalog';
+} from '../../../systems/hero/character/data/CharacterCatalog';
 
 import {
     ProfessionDefinition,
-} from '../../../systems/profession/definition/ProfessionTypes';
+} from '../../../systems/hero/profession/definition/ProfessionTypes';
 
 import {
     AudioManager,

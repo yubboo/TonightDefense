@@ -24,8 +24,8 @@ import {
 } from 'cc';
 
 import {
-    CompanionDefinition,
-} from '../../../systems/character/data/CompanionCatalog';
+    CharacterDefinition,
+} from '../../../systems/hero/character/data/CharacterCatalog';
 
 import {
     CompanionPortraitResolver,
@@ -39,11 +39,11 @@ export class RecruitChoicePanel {
     static async create(
         canvas: Node,
         companions:
-            readonly CompanionDefinition[],
+            readonly CharacterDefinition[],
         onSelect:
             (
                 companion:
-                    CompanionDefinition,
+                    CharacterDefinition,
             ) => void,
     ): Promise<Node> {
         /**

@@ -12,7 +12,7 @@ import {
 
 import {
     HeroSelectionState,
-} from '../../character/selection/HeroSelectionState';
+} from '../../hero/character/selection/HeroSelectionState';
 
 const { ccclass } = _decorator;
 

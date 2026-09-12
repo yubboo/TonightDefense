@@ -9,15 +9,15 @@ import {
 
 import {
     ProfessionAttackMode,
-} from '../../profession/definition/ProfessionTypes';
+} from '../../hero/profession/definition/ProfessionTypes';
 
 import {
     getProfessionById,
-} from '../../profession/definition/ProfessionCatalog';
+} from '../../hero/profession/definition/ProfessionCatalog';
 
 import {
     getCharacterById,
-} from '../../character/data/CharacterCatalog';
+} from '../../hero/character/data/CharacterCatalog';
 
 /**
  * 兼容旧接口名称。

@@ -30,11 +30,11 @@ import {
 
 import {
     InventoryService,
-} from '../../inventory/runtime/InventoryService';
+} from '../../storage/inventory/runtime/InventoryService';
 
 import {
     ItemCatalog,
-} from '../../item/definition/ItemCatalog';
+} from '../../storage/item/definition/ItemCatalog';
 
 import {
     StageChestService,
@@ -66,7 +66,7 @@ import {
 
 import {
     GamePerformanceSettings,
-} from '../../settings/GamePerformanceSettings';
+} from '../settings/GamePerformanceSettings';
 
 import {
     AudioManager,

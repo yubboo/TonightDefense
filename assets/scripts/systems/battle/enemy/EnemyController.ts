@@ -23,7 +23,7 @@ import {
 
 import {
     ExperienceSystem,
-} from '../../progression/experience/ExperienceSystem';
+} from '../../hero/progression/experience/ExperienceSystem';
 
 import {
     DropSystem,
@@ -39,7 +39,7 @@ import {
 
 import {
     MainHeroController,
-} from '../../character/player/MainHeroController';
+} from '../../hero/character/player/MainHeroController';
 
 import {
     BattleCharacterTarget,
@@ -120,6 +120,9 @@ export interface EnemyTarget {
     node: Node;
     archetype: EnemyArchetype;
     rank: EnemyRank;
+    currentHp: number;
+    maxHp: number;
+    defense: number;
 }
 
 /**
@@ -736,15 +739,90 @@ extends Component {
                 continue;
             }
 
-            result.push({
-                id: enemy.id,
-                node: enemy.node,
-                archetype: enemy.archetype,
-                rank: enemy.rank,
-            });
+            result.push(
+                this.toEnemyTarget(enemy),
+            );
         }
 
         return result;
+    }
+
+    getAliveEnemies(): EnemyTarget[] {
+        const result: EnemyTarget[] = [];
+
+        for (const enemy of this.enemies) {
+            if (
+                enemy.hp <= 0 ||
+                !enemy.node.isValid
+            ) {
+                continue;
+            }
+
+            result.push(
+                this.toEnemyTarget(enemy),
+            );
+        }
+
+        return result;
+    }
+
+    findHighestHpEnemy(
+        position: Vec3 | Vec2,
+        maxDistance =
+            Number.POSITIVE_INFINITY,
+    ): EnemyTarget | null {
+        const maxDistanceSq =
+            maxDistance * maxDistance;
+
+        let best: EnemyRuntime | null = null;
+
+        for (const enemy of this.enemies) {
+            if (
+                enemy.hp <= 0 ||
+                !enemy.node.isValid
+            ) {
+                continue;
+            }
+
+            const dx =
+                enemy.node.position.x -
+                position.x;
+            const dy =
+                enemy.node.position.y -
+                position.y;
+
+            if (
+                dx * dx + dy * dy >
+                maxDistanceSq
+            ) {
+                continue;
+            }
+
+            if (
+                !best ||
+                enemy.hp > best.hp
+            ) {
+                best = enemy;
+            }
+        }
+
+        return best
+            ? this.toEnemyTarget(best)
+            : null;
+    }
+
+    private toEnemyTarget(
+        enemy: EnemyRuntime,
+    ): EnemyTarget {
+        return {
+            id: enemy.id,
+            node: enemy.node,
+            archetype: enemy.archetype,
+            rank: enemy.rank,
+            currentHp: enemy.hp,
+            maxHp: enemy.maxHp,
+            defense: enemy.defense,
+        };
     }
 
     damageEnemiesInRadius(
@@ -855,14 +933,7 @@ extends Component {
             return null;
         }
 
-        return {
-            id: best.id,
-            node: best.node,
-            archetype:
-                best.archetype,
-            rank:
-                best.rank,
-        };
+        return this.toEnemyTarget(best);
     }
 
     /**

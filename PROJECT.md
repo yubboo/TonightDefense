@@ -3,7 +3,7 @@
 ## 项目信息
 
 - 项目名：TonightDefense
-- 当前整理包版本：v0.6.0
+- 当前整理包版本：v0.6.1
 - Cocos Creator：3.8.8
 - 目标平台：微信小游戏
 
@@ -20,6 +20,23 @@ AI / Agent / 自动化修改项目时，统一遵循项目根目录 `AGENTS.md`�
 源码包不包含 `library`、`temp`、`build`、`native` 等自动生成目录，以减少缓存污染和 Windows 路径过长问题。
 源码包包含 `design-reference/` 共享设计素材库，便于 GitHub 与网页端 AI 按正式设计继续开发。
 
+## v0.6.1 英雄域收口 / 职业技能成长 / 项目骨架整理
+
+- 以 GitHub v0.6.0 `26f73c0` 为 Last Known Good，不复制 Boss、Wave、Pause、Audio、Enemy、Inventory 等已存在事实源。
+- 项目脚本按业务域重新归档：`character/profession/skill/progression/equipment` 收口到 `assets/scripts/systems/hero/`；`inventory/item/warehouse` 收口到 `systems/storage/`；设置归入 `feature/settings`；正式战斗场景构建从 `debug/prototype` 迁入 `battle/view/BattleSceneSetup.ts`。
+- 清理根目录维护碎片：模块清单移入 `docs/architecture/`，迁移 manifest 与旧同步说明移入 `docs/archive/migrations/`；项目根目录只保留真正入口、源码目录与维护工具。
+- 移除 `CompanionCatalog` / `CompanionStatsConfig` 和旧 `SkillCatalog` / `UpgradeCatalog` / `SkillEffectCatalog` 等重复兼容层；招募、UI 与战斗直接读取统一 Character / Profession / ProfessionSkill 数据。
+- 职业技能系统统一为“每职业 1 被动 + 4 主动”：被动入场 Lv.1，主动 Lv.0 锁定；主动解锁后冷却完成自动释放；同职业英雄共享本局技能等级、各自独立冷却。
+- 新增 `ProfessionSkillRunState`（单局技能等级唯一状态）、`HeroSkillUpgradeService`（三选一唯一入口）、`HeroSkillRuntime`（自动释放唯一 Runtime）。三选一只抽当前阵容职业：主角职业权重 2、每名 AI 英雄职业权重 1、同职业叠加、满级排除、同轮不重复。
+- 按用户职业技能设计落地战士 / 坦克 / 游侠 / 法师 / 辅助 Lv1~Lv5 完整数据；其它既有 ProfessionId 同样拥有独立可运行技能模组，不再回退为同一模板。
+- 战斗技能 UI 改为状态显示：四技能位显示未解锁 / Lv / 冷却，不再发送手动释放意图；技能三选一卡改为“职业 + 技能 + 当前→下一等级 + 本级效果”。
+- 大厅 `MainMenuHeroPage` 正式标记为“英雄仓库”，展示人物 / 职业 / 技能 / 培养 / 装备五个子域；普通 Warehouse 继续只负责物品持有与存储。
+- `CharacterCombatant` 增加统一运行时 modifier 能力，技能效果复用统一攻击、治疗、护盾、增益和状态结算；高级敌人控制继续通过后续 CombatEvent / EnemyStatus 接口补齐，禁止写回 UI 或人物控制器。
+- 三选一/招募覆盖层打开时会同步暂停 `HeroSkillRuntime` 与 `StatusEffectSystem`，避免战斗主体暂停但技能冷却、燃烧或持续状态仍在后台推进。
+- `scripts/github/check-project.ps1` 同步到新路径并增加旧系统根目录回归检查；所有已有 `.meta` 随文件迁移并保持原 UUID。
+- 增量覆盖迁移工具收纳在 `scripts/migrations/`，不会污染项目根目录；完整 v0.6.1 源码包无需运行迁移脚本。
+- 详细技能规范见 `docs/design/HERO-PROFESSION-SKILLS.md`，架构机器清单升级到 `docs/architecture/project-modules.json` v3.0.0。
+
 ## v0.6.0 正式战斗闭环与首批美术资源
 
 - 保留并复用现有 Character、Recruit、AI、Defense、Wave、Boss、Audio 和 Pause 权威实现；赤金炎龙继续由 `BossCatalog -> BossRuntimeController -> EnemyController` 原链路运行。
@@ -30,6 +47,7 @@ AI / Agent / 自动化修改项目时，统一遵循项目根目录 `AGENTS.md`�
 - 补齐失败/重试/回大厅、首次战斗引导、装备穿戴与属性结算、Boss 保底装备掉落、存档 v2 备份恢复、战斗对象池/资源预载、统计与显式调试面板。
 - 所有新运行资源使用英文路径、透明 PNG 和配套 `.meta`，设计原稿与使用说明保存在 `design-reference/generated/v0.6.0/`。
 - 兼容基线固定为 Cocos Creator 3.8.8，未引入更高版本 API。
+- GitHub 一键推送支持版本化结构迁移删除清单；v0.6.1 的旧目录删除会被精确授权，任何未列入清单的关键源码删除仍会被拦截。
 
 ## v0.5.2 GitHub 共享设计素材基线
 

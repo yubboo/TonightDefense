@@ -30,7 +30,7 @@ import {
 import {
     GameFrameRate,
     GamePerformanceSettings,
-} from '../../../systems/settings/GamePerformanceSettings';
+} from '../../../systems/feature/settings/GamePerformanceSettings';
 
 import {
     AudioManager,

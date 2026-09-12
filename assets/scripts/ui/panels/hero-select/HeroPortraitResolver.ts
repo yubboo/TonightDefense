@@ -10,7 +10,7 @@ import {
 
 import {
     CharacterDefinition,
-} from '../../../systems/character/data/CharacterCatalog';
+} from '../../../systems/hero/character/data/CharacterCatalog';
 
 export class HeroPortraitResolver {
     static async preload(

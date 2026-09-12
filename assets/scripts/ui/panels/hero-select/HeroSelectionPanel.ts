@@ -20,11 +20,11 @@ import {
 
 import {
     CharacterDefinition,
-} from '../../../systems/character/data/CharacterCatalog';
+} from '../../../systems/hero/character/data/CharacterCatalog';
 
 import {
     getProfessionById,
-} from '../../../systems/profession/definition/ProfessionCatalog';
+} from '../../../systems/hero/profession/definition/ProfessionCatalog';
 
 import {
     HeroPortraitResolver,

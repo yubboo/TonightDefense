@@ -2,46 +2,68 @@
 
 ## 当前版本
 
-**v0.6.0 — 正式战斗闭环与首批美术资源**
+**v0.6.1 — 英雄域收口 / 职业技能成长 / 项目骨架整理**
 
 ## 当前稳定基线
 
 - Cocos Creator：3.8.8。
 - 目标平台：微信小游戏。
-- 场景：`MainMenu.scene` + `Battle.scene`，不为商店/英雄/仓库等 MainMenu 页面额外拆 Scene。
-- 音频：唯一 `AudioManager`，唯一目录 `assets/resources/audio/`，3 BGM + 8 SFX；禁止恢复 `audio_v2` / WAV。
+- 场景：`MainMenu.scene` + `Battle.scene`；大厅各功能继续使用页面，不为英雄仓库、普通仓库、商店额外拆 Scene。
+- GitHub：`main` 是源码事实来源；本版本开发基线为 v0.6.0 commit `26f73c0`，该基线 Safety Gate 为绿色。
+- 音频：唯一 `AudioManager`，唯一运行目录 `assets/resources/audio/`。
 - 暂停：唯一 `BattlePauseService` + `BattlePausePanel`。
-- 英雄：所有可上场人物统一来自 CharacterSystem；主角与 AI 英雄共享人物/职业数据，区别只在控制方式。
-- 队伍：主角 + 最多 4 名 AI 英雄。
-- 战斗路线：有限守城战场，怪物从上方泉水区域进入；AI 英雄只在主战场 + 防守区活动，主角可由玩家主动前压。
-- 防线：英雄优先承伤；英雄都失去战斗能力后进入 `雕像 -> 城墙 -> 公主`。
-- AI 英雄复活：固定四宫格复活位，雕像持续输送能量并持续消耗自身生命，满血后重新参战。
-- Boss：第 40 波为“普通潮 -> 精英潮 -> 警报 -> 赤金炎龙”；三阶段、三种预警范围技能、独立 Boss 血条，仍复用统一敌人生命/目标/掉落链。
-- 地图：`StageCatalog` 统一关卡、地图、敌人池、预算波次、精英/Boss 与奖励；`BattleMapCatalog` 继续只管主题，战斗几何坐标仍由唯一 `BattleLayoutConfig` 管理。
-- 阵型：主角中轴 C 位；伙伴 1/2/3 横排；伙伴 4 为中轴远程后排；单塔位于城墙前，公主位于城墙后。
-- HUD：地图、单塔、城墙、公主、顶部蓝金面板、五人卡框和炎诀少年四技能图标已改为正式 PNG/Sprite；`Graphics` 仅在资源加载失败时回退。
-- 主动技能：`ActiveSkillRuntime` 唯一拥有冷却/能量，HUD 只发 `hero-skill-intent`；首批四职业模板复用统一目标、效果和状态结算。
-- 装备/存档：装备穿戴与战斗属性链已接入；存档升级为 v2，写入前备份并支持损坏恢复。
-- 战斗闭环：失败、重试、回大厅、首次战斗引导、对象池/预载、战斗统计与显式调试面板已接入。
-- 设计素材：`design-reference/` 整套设计板、拆图、清单、PSD 与交付归档纳入 GitHub 共享基线；网页端 AI 必须优先使用这些已批准素材，不得以临时生成图替换。
+- Boss：继续保持 `BossCatalog -> BossRuntimeController -> EnemyController`；本轮不复制 Boss 生命、掉落或波次逻辑。
+- 战斗地图：`StageCatalog` 管关卡内容，`BattleMapCatalog` 管主题，`BattleLayoutConfig` 管战斗几何坐标。
 
-## GitHub 基线
+## v0.6.1 英雄大系统
 
-- GitHub helper：首次初始化会自动创建/修复 `origin`，空仓库按首次推送流程处理；PowerShell 脚本统一 UTF-8 BOM + CRLF；Public/Private 人工确认大小写不敏感，并在首次确认后保存到本地 `.git/config`，避免每次重复询问；Safety Gate 已增加 Windows PowerShell 5.1 的中文路径与相对 import 假阳性保护。
+英雄相关代码统一收口到 `assets/scripts/systems/hero/`：
 
-仓库：`https://github.com/yubboo/TonightDefense`
+```text
+hero/
+├─ character/      # 人物、主角/AI 控制、队伍、战斗属性、表现
+├─ profession/     # 职业定义与展示数据
+├─ skill/          # 职业技能数据、单局等级、自动释放、效果、选敌、三选一
+├─ progression/    # 经验、波次成长编排、招募
+└─ equipment/      # 英雄装备穿戴与战斗属性结算
+```
 
-从本版本开始，首次完整推送成功后：
+永久规则：主角和 AI 伙伴属于同一个 HeroSystem。Character 只定义“谁”，Profession 定义“职业基础战斗方式”，Skill 定义“职业技能模组”，Progression 负责“本局怎么成长”，Equipment 负责“英雄装备怎么影响战斗”。
 
-- GitHub `main` 作为源码基线；
-- 新版本开发前必须先读取 `main` 最新 Commit 与 Actions 结果；
-- 本地 ZIP 仍可用于备份/回滚，但不能替代 Git 历史作为“当前源码到底是哪一版”的事实来源；
-- GitHub Actions 当前只做静态/Cocos Meta/回归 Gate，不能冒充 Cocos Creator 编辑器预览或微信真机验证。
+大厅 `MainMenuHeroPage` 明确为“英雄仓库”，包含人物 / 职业 / 技能 / 培养 / 装备五个子入口语义；普通 `Warehouse` 继续只负责装备、材料、道具等物品存储，两者不共用 UI 职责。
+
+## 职业技能规则
+
+- 每个职业固定 **1 个被动 + 4 个主动技能**。
+- 被动入场默认 Lv.1；主动技能初始 Lv.0（锁定）。
+- 三选一第一次抽到主动技能时解锁 Lv.1，之后升级到 Lv.5；Lv.5 后退出候选池。
+- 主动技能不再由玩家点击触发：冷却完成且存在合法目标时自动释放，然后重新进入冷却。
+- 同职业的多名上阵英雄共享本局技能等级，但每个英雄拥有独立冷却计时。
+- 三选一只从当前上阵职业池抽取：主角职业权重 2；每名 AI 英雄职业权重 1；相同职业叠加权重；同轮不重复同一技能。
+- `ProfessionSkillCatalog` 是职业技能定义唯一来源；`ProfessionSkillRunState` 是单局技能等级唯一来源；`HeroSkillRuntime` 是自动施放/冷却唯一 Runtime；`HeroSkillUpgradeService` 是三选一候选和升级唯一入口。
+- 首批完整设计数据：战士、坦克、游侠、法师、辅助；其余现有职业都有独立可运行技能模组，不再错误回退到同一套通用技能。
+
+### 当前技能效果支持层级
+
+已统一支持：单体/多段/范围/直线/扇形/多目标/连锁伤害、治疗、单体/团队护盾、团队增益、持续治疗区域、燃烧、击退、攻击/攻速/移速/减伤等英雄临时修正。
+
+坦克受击叠层、游侠标记、完整嘲讽/冻结/敌人减速、法师共鸣范围放大等需要 Enemy/Combat 事件接口的高级状态已经保留在 Catalog 的 `specialTags` 数据中；v0.6.1 不把它们硬编码进 UI 或 CharacterController，后续通过统一 CombatEvent/EnemyStatus 接口补齐。
+
+## 项目骨架整理
+
+- `character / profession / skill / progression` 顶层散目录并入 `systems/hero/`。
+- `inventory / item / warehouse` 并入 `systems/storage/`。
+- `settings` 并入 `systems/feature/settings/`。
+- 历史 `feature/economy` 兼容层移入 `systems/economy/legacy/`；真正经济事实来源仍是 `CurrencyService`。
+- 原运行时 `debug/prototype/Step2SceneSetup.ts` 迁入 `systems/battle/view/BattleSceneSetup.ts`，不再把正式战斗场景实现放在 prototype 目录。
+- 根目录迁移清单、旧架构 manifest、设计同步说明归档到 `docs/archive/migrations/`；`project-modules.json` 迁到 `docs/architecture/`。
+- 清理脚本系统中无对应目录的空 `.meta` 占位，减少 Cocos AssetDB 噪音。
+- 移除 `CompanionCatalog`、`CompanionStatsConfig`、旧 `SkillCatalog / UpgradeCatalog / SkillEffectCatalog` 等重复兼容事实源；运行时代码直接读取统一 Character / Profession / ProfessionSkill 数据。
 
 ## 当前已知开发重点
 
-1. 在 Cocos Creator 3.8.8 编辑器与微信真机调优首批正式资源的锚点、长屏安全区和技能触摸手感。
-2. 为既有人物补齐正式头像、四方向/攻击/受伤/死亡动画和职业差异特效。
-3. 扩充 `StageCatalog` 的后续章节、地图机制与预算曲线，不复制波次控制器。
-4. 基于 `BossCatalog` 扩展其它 Boss，并调优赤金炎龙三阶段技能可读性。
-5. 完成微信分包、真机性能、异常日志和发布回归矩阵。
+1. 在 Cocos Creator 3.8.8 编辑器验证 v0.6.1 的脚本迁移、Scene UUID 引用、战斗自动技能和招募闭环。
+2. 增加统一 CombatEvent/EnemyStatus 接口，完整落地坦克叠层、游侠印记、嘲讽/冻结/减速等高级职业机制。
+3. 把英雄仓库从“真实数据概览”继续推进到永久英雄等级、培养、突破和逐英雄装备配置；不要把局内技能等级保存成永久等级。
+4. 为所有职业制作独立技能图标/特效；当前可继续复用公共技能槽图标作为安全占位。
+5. 微信开发者工具与真机继续验证 GC、自动技能高频选敌、长屏 HUD 和 30/60 FPS。

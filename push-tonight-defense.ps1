@@ -310,31 +310,78 @@ function Invoke-Safety([string]$Mode) {
     }
 }
 
+function Get-PlannedMigrationDeletionMap {
+    $map = @{}
+    $version = Get-TonightDefenseVersion
+    if ([string]::IsNullOrWhiteSpace($version) -or $version -eq 'unknown') {
+        return $map
+    }
+
+    $manifestRel = 'scripts/migrations/v' + $version + '-expected-deletions.txt'
+    $manifestPath = Join-Path $ProjectRoot ($manifestRel -replace '/', '\')
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+        return $map
+    }
+
+    foreach ($line in @(Get-Content -LiteralPath $manifestPath -Encoding UTF8)) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        $trimmed = $line.Trim()
+        if ($trimmed.StartsWith('#')) { continue }
+        $normalized = $trimmed.Replace('\','/').TrimStart('/')
+        if ([string]::IsNullOrWhiteSpace($normalized)) { continue }
+        $map[$normalized.ToLowerInvariant()] = $true
+    }
+
+    if ($map.Count -gt 0) {
+        Write-Warn2 ('已加载 v' + $version + ' 结构迁移删除清单：' + $map.Count + ' 项。')
+    }
+    return $map
+}
+
 function Test-StagedDeletionSafety {
     $rows = @(& git -c core.quotePath=false diff --cached --name-status --diff-filter=D)
     if ($rows.Count -eq 0) { return }
 
-    $critical = New-Object System.Collections.Generic.List[string]
+    $plannedMap = Get-PlannedMigrationDeletionMap
+    $planned = New-Object System.Collections.Generic.List[string]
+    $unexpected = New-Object System.Collections.Generic.List[string]
+    $unexpectedCritical = New-Object System.Collections.Generic.List[string]
     $all = New-Object System.Collections.Generic.List[string]
+
     foreach ($row in $rows) {
         if ([string]::IsNullOrWhiteSpace($row)) { continue }
         $parts = $row -split "`t", 2
         if ($parts.Count -lt 2) { continue }
+
         $file = $parts[1].Replace('\','/')
         $all.Add($file)
+
+        $key = $file.ToLowerInvariant()
+        $isPlanned = $plannedMap.ContainsKey($key)
+        if ($isPlanned) {
+            $planned.Add($file)
+            continue
+        }
+
+        $unexpected.Add($file)
         if ($file -match '^(?:assets/scripts/|assets/scenes/|assets/resources/|settings/|\.github/|scripts/github/|AGENTS\.md$|PROJECT\.md$)') {
-            $critical.Add($file)
+            $unexpectedCritical.Add($file)
         }
     }
 
-    if ($critical.Count -gt 0) {
-        Write-Host ''
-        Write-Host '发现关键游戏源码/资源删除，一键推送默认拒绝：' -ForegroundColor Red
-        $critical | Select-Object -First 25 | ForEach-Object { Write-Host ('  - ' + $_) -ForegroundColor Red }
-        Stop-Fail '关键文件删除保护已触发；请人工确认后再处理。'
+    if ($planned.Count -gt 0) {
+        Write-Warn2 ('已确认本版本结构迁移删除：' + $planned.Count + ' 项；这些路径已由版本化清单精确授权。')
     }
-    if ($all.Count -gt 25 -and -not $AllowMassDeletion) {
-        Stop-Fail ('检测到 ' + $all.Count + ' 个删除。大型删除必须人工确认或显式使用 -AllowMassDeletion。')
+
+    if ($unexpectedCritical.Count -gt 0) {
+        Write-Host ''
+        Write-Host '发现未列入迁移清单的关键游戏源码/资源删除，一键推送拒绝：' -ForegroundColor Red
+        $unexpectedCritical | Select-Object -First 25 | ForEach-Object { Write-Host ('  - ' + $_) -ForegroundColor Red }
+        Stop-Fail '关键文件删除保护已触发；请检查这些删除是否真的是预期变更。'
+    }
+
+    if ($unexpected.Count -gt 25 -and -not $AllowMassDeletion) {
+        Stop-Fail ('检测到 ' + $unexpected.Count + ' 个未授权删除。大型删除必须人工确认或显式使用 -AllowMassDeletion。')
     }
 }
 

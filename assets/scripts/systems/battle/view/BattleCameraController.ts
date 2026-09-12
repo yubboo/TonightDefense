@@ -22,7 +22,7 @@ import {
 
 import {
     MainHeroController,
-} from '../../character/player/MainHeroController';
+} from '../../hero/character/player/MainHeroController';
 
 import {
     BATTLE_LAYOUT,

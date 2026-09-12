@@ -26,11 +26,11 @@ import {
 
 import {
     MainHeroController,
-} from '../../character/player/MainHeroController';
+} from '../../hero/character/player/MainHeroController';
 
 import {
     ProfessionAttackMode,
-} from '../../profession/definition/ProfessionTypes';
+} from '../../hero/profession/definition/ProfessionTypes';
 
 import {
     AudioManager,
@@ -182,10 +182,17 @@ extends Component {
             );
         }
 
-        this.cooldown =
+        const baseInterval =
             profession
                 ?.attackInterval ??
             this.attackInterval;
+
+        this.cooldown =
+            baseInterval /
+            Math.max(
+                0.1,
+                combatant.attackSpeedMultiplier,
+            );
     }
 
     private fireProjectile(

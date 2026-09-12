@@ -11,17 +11,13 @@ import {
 } from 'cc';
 
 import {
-    CompanionDefinition,
-} from '../../../systems/character/data/CompanionCatalog';
-
-import {
-    getCharacterById,
-} from '../../../systems/character/data/CharacterCatalog';
+    CharacterDefinition,
+} from '../../../systems/hero/character/data/CharacterCatalog';
 
 export class CompanionPortraitResolver {
     static async preload(
         companions:
-            readonly CompanionDefinition[],
+            readonly CharacterDefinition[],
     ):
         Promise<
             Map<
@@ -53,25 +49,16 @@ export class CompanionPortraitResolver {
 
     private static async resolve(
         companion:
-            CompanionDefinition,
+            CharacterDefinition,
     ):
         Promise<
             SpriteFrame | null
         > {
-        const character =
-            getCharacterById(
-                companion.id,
-            );
-
         const root =
-            character
-                ?.resourceRoot ??
-            `characters/companions/${companion.id}`;
+            companion.resourceRoot;
 
         const spriteKey =
-            character
-                ?.spriteKey ??
-            companion.id;
+            companion.spriteKey;
 
         const candidates = [
             `${root}/icon/portrait/spriteFrame`,

@@ -56,11 +56,11 @@ import {
 
 import {
     getWaveRewardKind,
-} from '../../progression/levelup/WaveRewardSchedule';
+} from '../../hero/progression/levelup/WaveRewardSchedule';
 
 import {
     LevelUpChoiceController,
-} from '../../progression/levelup/LevelUpChoiceController';
+} from '../../hero/progression/levelup/LevelUpChoiceController';
 
 import {
     ChapterWaveHUD,
@@ -68,7 +68,7 @@ import {
 
 import {
     HeroSelectionState,
-} from '../../character/selection/HeroSelectionState';
+} from '../../hero/character/selection/HeroSelectionState';
 
 import {
     GameplaySessionState,
