@@ -1,0 +1,85 @@
+# TonightDefense GitHub Safety Baseline
+# 原则：Git 只保存可复现的项目源码、运行时资源、项目设置与开发文档。
+# Cocos 缓存、构建产物、本机编辑器状态、私密配置和大体积设计源文件不进入普通 Git 历史。
+
+# Cocos Creator generated/cache directories
+/library/
+/temp/
+/build/
+/native/
+/local/
+
+# Cocos editor/user-local profiles (may contain local build state / WeChat AppID)
+/profiles/
+
+# Local authoring/output workspace
+/output/
+
+# Heavy design source/reference packages are kept outside normal Git history.
+# If these need version control later, use Git LFS deliberately.
+/design-reference/
+
+# Extension dependencies are reproducible from package-lock.json
+/extensions/**/node_modules/
+
+# Generic dependencies / caches
+/node_modules/
+.pnpm-store/
+**/.pnpm-store/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Environment / local overrides / private platform config
+.env
+.env.*
+!.env.example
+*.local
+*.local.json
+project.private.config.json
+private.config.json
+
+# Secrets / credentials / signing materials
+*.key
+*.priv
+*.seed
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.cer
+*.crt
+*.mobileprovision
+**/secrets.json
+**/credentials.json
+**/*secret*.json
+**/*token*.txt
+
+# Logs / diagnostics / temporary files
+*.log
+*.dmp
+*.stackdump
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Local archives / large editable art sources.
+# Runtime PNG/MP3 under assets/ are intentionally NOT ignored.
+*.zip
+*.7z
+*.rar
+*.psd
+*.psb
+
+# Python cache (authoring scripts, if any)
+__pycache__/
+*.pyc
+
+# Keep the project-level Creator default import rule, but ignore other .creator local helpers.
+/.creator/*
+!/.creator/default-meta.json

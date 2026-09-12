@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "source": "user-uploaded scripts.zip",
+  "files": {
+    "battle/AutoAttackController.ts": "systems/battle/combat/AutoAttackController.ts",
+    "battle/BattleLayoutConfig.ts": "systems/battle/data/BattleLayoutConfig.ts",
+    "battle/BattleLayoutPreview.ts": "debug/battle/BattleLayoutPreview.ts",
+    "battle/CoreHealth.ts": "systems/battle/objective/CoreHealth.ts",
+    "battle/ExperienceSystem.ts": "systems/progression/experience/ExperienceSystem.ts",
+    "battle/LevelUpChoiceController.ts": "systems/progression/levelup/LevelUpChoiceController.ts",
+    "character/CharacterMotionAnimator.ts": "systems/character/animation/legacy/CharacterMotionAnimator.ts",
+    "character/CharacterSpriteController.ts": "systems/character/visual/CharacterSpriteController.ts",
+    "character/CutoutCharacterAnimator.ts": "systems/character/animation/CutoutCharacterAnimator.ts",
+    "character/MageCutoutFactory.ts": "systems/character/visual/MageCutoutFactory.ts",
+    "character/SpineCharacterController.ts": "systems/character/animation/legacy/SpineCharacterController.ts",
+    "companion/CompanionBattleController.ts": "systems/character/companion/CompanionBattleController.ts",
+    "core/GameBootstrap.ts": "core/bootstrap/GameBootstrap.ts",
+    "core/Step2SceneSetup.ts": "debug/prototype/Step2SceneSetup.ts",
+    "enemy/EnemyController.ts": "systems/battle/enemy/EnemyController.ts",
+    "input/MoveInputState.ts": "ui/input/MoveInputState.ts",
+    "party/CompanionCatalog.ts": "systems/character/data/CompanionCatalog.ts",
+    "party/PartyState.ts": "systems/character/party/PartyState.ts",
+    "player/MainHeroController.ts": "systems/character/player/MainHeroController.ts",
+    "player/PlayerController.ts": "systems/character/player/PlayerController.ts",
+    "player/VirtualJoystick.ts": "ui/input/VirtualJoystick.ts",
+    "progression/LevelState.ts": "systems/progression/experience/LevelState.ts",
+    "progression/RandomService.ts": "systems/progression/recruitment/RandomService.ts",
+    "progression/RecruitService.ts": "systems/progression/recruitment/RecruitService.ts",
+    "shared/GameConstants.ts": "shared/GameConstants.ts",
+    "shared/GameEnums.ts": "shared/GameEnums.ts"
+  }
+}

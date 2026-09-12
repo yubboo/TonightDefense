@@ -1,0 +1,256 @@
+/**
+ * @architecture TonightDefense V1.0
+ * @owner battle
+ * @module data
+ */
+import {
+    Vec2,
+} from 'cc';
+
+import {
+    ProfessionAttackMode,
+} from '../../profession/definition/ProfessionTypes';
+
+import {
+    getProfessionById,
+} from '../../profession/definition/ProfessionCatalog';
+
+import {
+    getCharacterById,
+} from '../../character/data/CharacterCatalog';
+
+/**
+ * 兼容旧接口名称。
+ * 战斗角色的攻击方式真正由 ProfessionSystem 统一决定。
+ */
+export type CompanionAttackMode =
+    ProfessionAttackMode;
+
+/**
+ * 兼容旧接口名称。
+ * 新代码不再把“伙伴战斗参数”维护成第二套数据源；
+ * 这里仅把 Character -> Profession 的结果映射成旧结构。
+ */
+export interface CompanionCombatProfile {
+    mode:
+        CompanionAttackMode;
+
+    damage:
+        number;
+
+    attackInterval:
+        number;
+
+    attackRange:
+        number;
+
+    projectileSpeed:
+        number;
+}
+
+export const BATTLE_LAYOUT = {
+    /**
+     * 路线 B —— 有边界的半固定守城战场。
+     * 横向比纵向更宽一些，允许左右拉扯；上方保留怪物区与主战区，
+     * 下方固定为玩家防守区。
+     */
+    map: {
+        infinite: false,
+        width: 2200,
+        height: 2300,
+
+        /**
+         * 视觉/玩法分区：
+         * y >= enemyZoneMinY：怪物出没区 / 主角可主动堵泉水区域。
+         * mainZoneMinY ~ enemyZoneMinY：主战场 / 大乱斗区。
+         * defenseZoneMinY ~ mainZoneMinY：玩家防守区。
+         */
+        enemyZoneMinY: 250,
+        mainZoneMinY: -230,
+        defenseZoneMinY: -980,
+    },
+
+    view: {
+        /** 保留拉远视角，避免战斗画面重新变窄。 */
+        worldScale: 0.78,
+
+        /** 主角默认略偏下，给上方来怪留更多视野。 */
+        heroScreenY: -110,
+
+        /** 左右移动进入安全区边缘后镜头跟随。 */
+        deadZoneX: 78,
+        deadZoneY: 88,
+
+        /** 向下最多回到出生基线，不继续越过底部防守区。 */
+        followDown: false,
+
+        /** 指数平滑强度。 */
+        followSharpness: 7.2,
+
+        /** 720 x 1280 设计分辨率的一半。 */
+        viewportHalfWidth: 360,
+        viewportHalfHeight: 640,
+    },
+
+    heroSpawn:
+        new Vec2(
+            0,
+            -100,
+        ),
+
+    /**
+     * 玩家控制主角活动范围。
+     * 主角可以进入上半区主动堵泉水；这是与 AI 英雄活动规则的主要区别。
+     */
+    heroMoveBounds: {
+        minX: -930,
+        maxX: 930,
+        minY: -320,
+        maxY: 820,
+    },
+
+    /**
+     * 上半区 5 个固定怪物泉水/入口。
+     * 每次刷怪根据主角当前 X，优先选择最接近主角的入口与左右相邻入口，
+     * 因而整体表现为左上 / 上 / 右上来袭。
+     */
+    enemySpawn: {
+        fountains: [
+            new Vec2(-780, 860),
+            new Vec2(-390, 910),
+            new Vec2(0, 940),
+            new Vec2(390, 910),
+            new Vec2(780, 860),
+        ],
+
+        jitterX: 42,
+        jitterY: 28,
+    },
+
+    /**
+     * 四名 AI 英雄的固定出生/复活阵位：
+     *
+     * 英雄1    英雄2
+     * 英雄3    英雄4
+     *
+     * “伙伴”只是 AI 控制模式；人物本身仍来自统一 CharacterCatalog。
+     */
+    companionAnchors: [
+        new Vec2(-175, -265),
+        new Vec2(175, -265),
+        new Vec2(-175, -435),
+        new Vec2(175, -435),
+    ],
+
+    /** 复活位置与固定出生位完全一致。 */
+    companionReviveAnchors: [
+        new Vec2(-175, -265),
+        new Vec2(175, -265),
+        new Vec2(-175, -435),
+        new Vec2(175, -435),
+    ],
+
+    /**
+     * v0.4.12：AI 英雄只在“主战场 + 防守区”活动。
+     * 不再进入上方怪物泉水区，避免一名英雄先冲泉水单挑，
+     * 后排跟不上后形成连续送死。
+     *
+     * 主角仍然使用 heroMoveBounds，可以由玩家自行选择是否上前堵泉水。
+     */
+    aiHeroMoveBounds: {
+        minX: -860,
+        maxX: 860,
+        minY: -650,
+        maxY: 260,
+    },
+
+    /** 无怪时只在各自固定阵位附近做小范围巡逻。 */
+    companionGuardPatrolRadiusX: 125,
+    companionGuardPatrolRadiusY: 88,
+
+    companionPatrolSpeed: 62,
+    companionChaseSpeedMultiplier: 1.08,
+
+    companionPatrolPauseMin: 0.55,
+    companionPatrolPauseMax: 1.45,
+
+    /**
+     * 单个 AI 英雄复活全过程约 4 秒，总计消耗 200 点雕像生命。
+     * 消耗与生命恢复按时间连续发生。
+     */
+    companionRevive: {
+        duration: 4,
+        totalTowerHpCost: 200,
+        initialHpRatio: 0.04,
+    },
+
+    defenseTower:
+        new Vec2(
+            0,
+            -410,
+        ),
+
+    wall:
+        new Vec2(
+            0,
+            -525,
+        ),
+
+    princess:
+        new Vec2(
+            0,
+            -610,
+        ),
+} as const;
+
+/**
+ * 旧接口兼容层。
+ *
+ * CharacterCatalog + ProfessionCatalog 是所有英雄（玩家主角 / AI 伙伴）的唯一战斗数据源。
+ * 新增英雄只需要在 CharacterCatalog 指向一个 professionId；
+ * 不再在 BattleLayoutConfig 维护第二份“伙伴专属伤害/攻速/射程”表。
+ */
+export function getCompanionCombatProfile(
+    companionId:
+        string,
+): CompanionCombatProfile {
+    const character =
+        getCharacterById(
+            companionId,
+        );
+
+    if (character) {
+        const profession =
+            getProfessionById(
+                character
+                    .professionId,
+            );
+
+        return {
+            mode:
+                profession.attackMode,
+            damage:
+                profession
+                    .baseStats
+                    .attackPower,
+            attackInterval:
+                profession.attackInterval,
+            attackRange:
+                profession.attackRange,
+            projectileSpeed:
+                profession.projectileSpeed,
+        };
+    }
+
+    /**
+     * 只有历史脏数据/缺失人物时才会走这里；
+     * 正常角色永远从 ProfessionSystem 读取。
+     */
+    return {
+        mode: 'melee',
+        damage: 7,
+        attackInterval: 0.9,
+        attackRange: 60,
+        projectileSpeed: 0,
+    };
+}
