@@ -59,6 +59,18 @@ import {
     ENEMY_PROFILES,
 } from './EnemyTypes';
 
+import {
+    getBossDefinition,
+} from './boss/BossCatalog';
+
+import {
+    BossRuntimeController,
+} from './boss/BossRuntimeController';
+
+import {
+    BossHealthHUD,
+} from '../../../ui/hud/BossHealthHUD';
+
 const {
     ccclass,
     property,
@@ -94,6 +106,9 @@ interface EnemyRuntime {
 
     hpFill:
         Node | null;
+
+    bossRuntime:
+        BossRuntimeController | null;
 }
 
 export interface EnemyTarget {
@@ -188,6 +203,10 @@ extends Component {
         EnemyDeathListener | null =
         null;
 
+    private bossHud:
+        BossHealthHUD | null =
+        null;
+
     onLoad(): void {
         EnemyController.instance =
             this;
@@ -213,6 +232,8 @@ extends Component {
         );
 
         this.clearEnemyProjectiles();
+
+        this.destroyBossHud();
     }
 
     update(
@@ -541,6 +562,47 @@ extends Component {
                 spec.rank,
             );
 
+        const bossDefinition =
+            spec.rank ===
+                'boss'
+                ? getBossDefinition(
+                    spec.bossId ??
+                        'flame_dragon',
+                )
+                : null;
+
+        const bossRuntime =
+            bossDefinition
+                ? new BossRuntimeController(
+                    enemyNode,
+                    canvas,
+                    bossDefinition,
+                    damage,
+                )
+                : null;
+
+        if (bossDefinition) {
+            this.destroyBossHud();
+
+            this.bossHud =
+                new BossHealthHUD(
+                    canvas,
+                    bossDefinition
+                        .displayName,
+                    bossDefinition
+                        .title,
+                );
+
+            this.bossHud.update(
+                maxHp,
+                maxHp,
+                1,
+                bossDefinition
+                    .phases[0]
+                    .displayName,
+            );
+        }
+
         this.enemies.push(
             {
                 id: enemyId,
@@ -596,6 +658,8 @@ extends Component {
                     ),
 
                 hpFill,
+
+                bossRuntime,
             },
         );
 
@@ -771,6 +835,9 @@ extends Component {
             const enemy
             of copy
         ) {
+            enemy.bossRuntime
+                ?.destroy();
+
             if (awardExp) {
                 ExperienceSystem.instance
                     ?.addExp(
@@ -784,6 +851,8 @@ extends Component {
                 enemy.node.destroy();
             }
         }
+
+        this.destroyBossHud();
     }
 
     clearEnemyProjectiles(): void {
@@ -811,6 +880,29 @@ extends Component {
             !enemy.node.isValid
         ) {
             return;
+        }
+
+        if (enemy.bossRuntime) {
+            const casting =
+                enemy.bossRuntime
+                    .update(
+                        dt,
+                        enemy.hp /
+                            enemy.maxHp,
+                    );
+
+            this.bossHud?.update(
+                enemy.hp,
+                enemy.maxHp,
+                enemy.bossRuntime
+                    .phaseNumber,
+                enemy.bossRuntime
+                    .phaseName,
+            );
+
+            if (casting) {
+                return;
+            }
         }
 
         enemy.cooldown -= dt;
@@ -871,6 +963,11 @@ extends Component {
         const moveDistance =
             Math.min(
                 enemy.moveSpeed *
+                    (
+                        enemy.bossRuntime
+                            ?.moveSpeedMultiplier ??
+                        1
+                    ) *
                     dt,
                 distance,
             );
@@ -1010,7 +1107,12 @@ extends Component {
         }
 
         enemy.cooldown =
-            enemy.attackInterval;
+            enemy.attackInterval *
+            (
+                enemy.bossRuntime
+                    ?.attackIntervalMultiplier ??
+                1
+            );
     }
 
     /**
@@ -1393,6 +1495,17 @@ extends Component {
             enemy,
         );
 
+        if (enemy.bossRuntime) {
+            this.bossHud?.update(
+                enemy.hp,
+                enemy.maxHp,
+                enemy.bossRuntime
+                    .phaseNumber,
+                enemy.bossRuntime
+                    .phaseName,
+            );
+        }
+
         if (
             enemy.hp <= 0
         ) {
@@ -1434,6 +1547,16 @@ extends Component {
                 index,
                 1,
             );
+        }
+
+        enemy.bossRuntime
+            ?.destroy();
+
+        if (
+            enemy.rank ===
+            'boss'
+        ) {
+            this.destroyBossHud();
         }
 
         const deathEvent:
@@ -1492,6 +1615,11 @@ extends Component {
         ) {
             enemy.node.destroy();
         }
+    }
+
+    private destroyBossHud(): void {
+        this.bossHud?.destroy();
+        this.bossHud = null;
     }
 
     private drawEnemy(
@@ -1554,17 +1682,17 @@ extends Component {
         ) {
             bodyColor =
                 new Color(
-                    104,
-                    54,
-                    128,
+                    151,
+                    40,
+                    28,
                     255,
                 );
 
             accent =
                 new Color(
-                    226,
-                    94,
-                    109,
+                    235,
+                    170,
+                    53,
                     255,
                 );
         } else {
@@ -1716,7 +1844,7 @@ extends Component {
         const width =
             rank ===
                 'boss'
-                ? 82
+                ? 132
                 : 58;
 
         const root =
@@ -1731,7 +1859,7 @@ extends Component {
             0,
             rank ===
                 'boss'
-                ? 48
+                ? 94
                 : 42,
             0,
         );

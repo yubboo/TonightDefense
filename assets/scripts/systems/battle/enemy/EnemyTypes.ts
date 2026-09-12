@@ -3,6 +3,10 @@
  * @owner battle
  * @module enemy
  */
+import {
+    BossId,
+} from './boss/BossCatalog';
+
 export type EnemyArchetype =
     | 'melee'
     | 'ranged'
@@ -34,6 +38,9 @@ export interface EnemyProfile {
 export interface EnemySpawnSpec {
     archetype: EnemyArchetype;
     rank: EnemyRank;
+
+    /** 仅 rank=boss 时使用；普通怪不携带 Boss 内容身份。 */
+    bossId?: BossId;
 
     enemyLevel: number;
 

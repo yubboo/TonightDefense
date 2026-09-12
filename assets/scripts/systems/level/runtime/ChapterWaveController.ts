@@ -627,14 +627,19 @@ extends Component {
 
         this.killed += 1;
 
-        AudioManager.playSfx(
-            'enemy_death',
-            {
-                volume: 0.62,
-                minIntervalMs: 95,
-                throttleKey: 'enemy_death',
-            },
-        );
+        if (
+            event.rank !==
+            'boss'
+        ) {
+            AudioManager.playSfx(
+                'enemy_death',
+                {
+                    volume: 0.62,
+                    minIntervalMs: 95,
+                    throttleKey: 'enemy_death',
+                },
+            );
+        }
 
         if (
             this.currentWave <
@@ -669,6 +674,21 @@ extends Component {
             event.rank ===
             'boss'
         ) {
+            AudioManager.playSfx(
+                'flame_dragon_roar',
+                {
+                    volume: 0.86,
+                    minIntervalMs: 1200,
+                    throttleKey:
+                        'flame_dragon_death',
+                },
+            );
+
+            AudioManager.playBgm(
+                'battle',
+                0.6,
+            );
+
             this.refreshHud(
                 'BOSS 已击败',
             );
@@ -840,6 +860,9 @@ extends Component {
 
                     rank:
                         'boss',
+
+                    bossId:
+                        'flame_dragon',
 
                     enemyLevel:
                         definition
@@ -1117,7 +1140,7 @@ extends Component {
             );
 
         title.string =
-            'BOSS 来袭';
+            '赤金炎龙 来袭';
 
         title.fontSize = 66;
         title.lineHeight = 78;
@@ -1161,7 +1184,7 @@ extends Component {
             );
 
         sub.string =
-            '最终首领即将进入战场';
+            '焰岩之王即将焚毁防线';
 
         sub.fontSize = 24;
         sub.lineHeight = 30;

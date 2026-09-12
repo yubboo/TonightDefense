@@ -17,6 +17,7 @@ import {
     _decorator,
     Component,
     Node,
+    view as cocosView,
 } from 'cc';
 
 import {
@@ -47,6 +48,25 @@ extends Component {
     private currentX = 0;
     private currentY = 0;
 
+    /**
+     * 实际可见视口尺寸不能写死成 720x1280。
+     * 刘海屏/长屏设备在 fit-width 策略下会拥有更高的逻辑可见高度。
+     */
+    private viewportHalfWidth: number =
+        BATTLE_LAYOUT.view.viewportHalfWidth;
+
+    private viewportHalfHeight: number =
+        BATTLE_LAYOUT.view.viewportHalfHeight;
+
+    private viewportRefreshTimer = 0;
+
+    private readonly viewportRefreshInterval = 0.5;
+
+    /**
+     * 地图边缘额外多覆盖几像素，避免浮点/缩放舍入在边界处漏出 Camera 清屏色。
+     */
+    private readonly viewportEdgePadding = 6;
+
     private initialized = false;
 
     start(): void {
@@ -65,6 +85,7 @@ extends Component {
                 this.canvas,
             );
 
+        this.refreshViewportBounds();
         this.resetView();
     }
 
@@ -76,6 +97,16 @@ extends Component {
     lateUpdate(
         dt: number,
     ): void {
+        this.viewportRefreshTimer -= dt;
+
+        if (
+            this.viewportRefreshTimer <= 0
+        ) {
+            this.refreshViewportBounds();
+            this.viewportRefreshTimer =
+                this.viewportRefreshInterval;
+        }
+
         const root =
             this.worldRoot;
 
@@ -266,11 +297,13 @@ extends Component {
             0.5;
 
         const min =
-            view.viewportHalfWidth -
+            this.viewportHalfWidth +
+            this.viewportEdgePadding -
             scaledHalfWidth;
 
         const max =
-            -view.viewportHalfWidth +
+            -this.viewportHalfWidth -
+            this.viewportEdgePadding +
             scaledHalfWidth;
 
         if (min > max) {
@@ -306,7 +339,8 @@ extends Component {
 
         /** 地图向上推进时世界根节点向下移动。 */
         const min =
-            view.viewportHalfHeight -
+            this.viewportHalfHeight +
+            this.viewportEdgePadding -
             scaledHalfHeight;
 
         /**
@@ -320,7 +354,8 @@ extends Component {
                 view.worldScale;
 
         const mapSafeMax =
-            -view.viewportHalfHeight +
+            -this.viewportHalfHeight -
+            this.viewportEdgePadding +
             scaledHalfHeight;
 
         const max =
@@ -343,4 +378,30 @@ extends Component {
             ),
         );
     }
+    /**
+     * Cocos 的 Canvas 会随设备宽高比调整实际可见逻辑区域。
+     * 例如 iPhone 12 比 720x1280 更“高”，如果继续用固定 640 半高做 clamp，
+     * 世界层就会被允许移动得过远，最终在地图顶部露出 Camera 的黑色清屏色。
+     */
+    private refreshViewportBounds(): void {
+        const visibleSize =
+            cocosView.getVisibleSize();
+
+        if (
+            Number.isFinite(visibleSize.width) &&
+            visibleSize.width > 0
+        ) {
+            this.viewportHalfWidth =
+                visibleSize.width * 0.5;
+        }
+
+        if (
+            Number.isFinite(visibleSize.height) &&
+            visibleSize.height > 0
+        ) {
+            this.viewportHalfHeight =
+                visibleSize.height * 0.5;
+        }
+    }
+
 }

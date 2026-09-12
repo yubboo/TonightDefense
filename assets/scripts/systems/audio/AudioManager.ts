@@ -43,7 +43,8 @@ export type GameSfxId =
     | 'enemy_death'
     | 'wave_clear'
     | 'level_up'
-    | 'boss_warning';
+    | 'boss_warning'
+    | 'flame_dragon_roar';
 
 export interface PlaySfxOptions {
     volume?: number;
@@ -77,6 +78,8 @@ const SFX_PATHS:
             'audio/sfx/level_up',
         boss_warning:
             'audio/sfx/boss_warning',
+        flame_dragon_roar:
+            'audio/sfx/flame_dragon_roar',
     };
 
 @ccclass('AudioManager')

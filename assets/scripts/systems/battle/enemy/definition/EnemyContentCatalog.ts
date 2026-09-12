@@ -92,8 +92,8 @@ const ENEMIES:
             rank: 'boss',
             tags: ['Boss', '火焰', '飞行', '范围技能'],
             resourceRoot: 'enemies/bosses/flame_dragon',
-            status: 'reference_only',
-            designSource: '赤金炎龙_Boss拆分包',
+            status: 'runtime_ready',
+            designSource: '用户提供赤金炎龙设计板 + 运行时战斗精灵',
         },
         abyss_golem: {
             id: 'abyss_golem',

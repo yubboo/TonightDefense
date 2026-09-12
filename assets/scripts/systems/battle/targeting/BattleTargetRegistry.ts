@@ -262,6 +262,79 @@ export class BattleTargetRegistry {
         return count;
     }
 
+    /**
+     * Boss 范围技能的唯一 Hero 伤害入口。
+     * BossSystem 只提供圆心、半径与伤害，不复制目标表维护逻辑。
+     */
+    static takeAreaDamage(
+        x: number,
+        y: number,
+        radius: number,
+        damage: number,
+    ): number {
+        const radiusSq =
+            Math.max(0, radius) *
+            Math.max(0, radius);
+
+        let hitCount = 0;
+
+        for (
+            const [id, target]
+            of this.targets
+        ) {
+            if (
+                !this.isUsableTarget(
+                    id,
+                    target,
+                )
+            ) {
+                continue;
+            }
+
+            let alive = false;
+
+            try {
+                alive =
+                    target.isAlive.call(
+                        target,
+                    );
+            } catch (error) {
+                console.warn(
+                    `[今晚守城] BattleTargetRegistry 移除异常目标 ${id}`,
+                    error,
+                );
+
+                this.targets.delete(id);
+                continue;
+            }
+
+            if (!alive) {
+                continue;
+            }
+
+            const position =
+                target.node.position;
+            const dx =
+                position.x - x;
+            const dy =
+                position.y - y;
+
+            if (
+                dx * dx + dy * dy >
+                radiusSq
+            ) {
+                continue;
+            }
+
+            target.takeDamage(
+                damage,
+            );
+            hitCount += 1;
+        }
+
+        return hitCount;
+    }
+
     private static prune(): void {
         for (
             const [id, target]

@@ -66,6 +66,14 @@ MainMenu 的 Shop/Hero/Warehouse/Upgrade 是页面，不因为 UI 名称就拆�
 - `AutoAttackController`：自动攻击。
 - projectile / targeting / spawning / objective 各自保持单一职责。
 
+Boss 仍属于 BattleSystem 的特殊 Enemy：
+
+- `BossCatalog`：Boss 身份、阶段、技能定义唯一来源。
+- `BossRuntimeController`：只负责单只 Boss 的阶段、吟唱、范围技能和战斗精灵。
+- `EnemyController`：继续唯一拥有 Boss 的生命、移动、普攻、死亡和掉落。
+- `ChapterWaveController`：继续唯一决定第 40 波何时生成哪个 `BossId`。
+- `BossHealthHUD`：只显示 EnemyController 提供的状态，不复制 Boss 状态。
+
 怪物目标优先级：存活可战斗 Hero -> 雕像 -> 城墙 -> 公主。
 
 ### Level / Progression
