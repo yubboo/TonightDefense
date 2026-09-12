@@ -3,7 +3,7 @@
 ## 项目信息
 
 - 项目名：TonightDefense
-- 当前整理包版本：v0.5.2
+- 当前整理包版本：v0.6.0
 - Cocos Creator：3.8.8
 - 目标平台：微信小游戏
 
@@ -19,6 +19,17 @@ AI / Agent / 自动化修改项目时，统一遵循项目根目录 `AGENTS.md`�
 
 源码包不包含 `library`、`temp`、`build`、`native` 等自动生成目录，以减少缓存污染和 Windows 路径过长问题。
 源码包包含 `design-reference/` 共享设计素材库，便于 GitHub 与网页端 AI 按正式设计继续开发。
+
+## v0.6.0 正式战斗闭环与首批美术资源
+
+- 保留并复用现有 Character、Recruit、AI、Defense、Wave、Boss、Audio 和 Pause 权威实现；赤金炎龙继续由 `BossCatalog -> BossRuntimeController -> EnemyController` 原链路运行。
+- 新增 `BattleArt` 正式美术加载入口，把王城前境地图、单座守护塔、城墙、公主、顶部蓝金 HUD、五人横向人物卡框和炎诀少年四技能图标接入 Cocos `Sprite`；`Graphics` 只作资源失败回退。
+- 正式拆分 `UpgradeCatalog` 与 `ActiveSkillCatalog`，由 `ActiveSkillRuntime` 唯一管理冷却、能量和释放；首批提供炎诀少年、剑修、灵药师、体修四职业模板，并统一伤害、治疗、护盾、击退和持续状态结算。
+- 新增数据化 `StageCatalog`：关卡包含 `mapId`、敌人池、预算波次、精英波、Boss、地图修正、奖励和解锁条件；第 40 波继续接入赤金炎龙。
+- 成长选择调整到第 3、6、10、15、20、25、30、35 波，减少战斗频繁中断。
+- 补齐失败/重试/回大厅、首次战斗引导、装备穿戴与属性结算、Boss 保底装备掉落、存档 v2 备份恢复、战斗对象池/资源预载、统计与显式调试面板。
+- 所有新运行资源使用英文路径、透明 PNG 和配套 `.meta`，设计原稿与使用说明保存在 `design-reference/generated/v0.6.0/`。
+- 兼容基线固定为 Cocos Creator 3.8.8，未引入更高版本 API。
 
 ## v0.5.2 GitHub 共享设计素材基线
 

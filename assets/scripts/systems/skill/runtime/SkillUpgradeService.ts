@@ -4,9 +4,9 @@
  * @module runtime
  */
 import {
-    SKILL_CATALOG,
-    SkillDefinition,
-} from '../definition/SkillCatalog';
+    UPGRADE_CATALOG,
+    UpgradeDefinition,
+} from '../definition/UpgradeCatalog';
 
 import {
     MainHeroController,
@@ -29,7 +29,7 @@ export interface SkillTargetInfo {
 
 export interface SkillChoiceOption {
     target: SkillTargetInfo;
-    skill: SkillDefinition;
+    skill: UpgradeDefinition;
 }
 
 export class SkillUpgradeService {
@@ -127,9 +127,9 @@ export class SkillUpgradeService {
     private static pickSkillForTarget(
         target:
             SkillTargetInfo,
-    ): SkillDefinition {
+    ): UpgradeDefinition {
         const candidates =
-            SKILL_CATALOG.filter(
+            UPGRADE_CATALOG.filter(
                 (skill) =>
                     this.matchesTarget(
                         skill,
@@ -140,7 +140,7 @@ export class SkillUpgradeService {
         const pool =
             candidates.length > 0
                 ? candidates
-                : SKILL_CATALOG;
+                : UPGRADE_CATALOG;
 
         return pool[
             Math.floor(
@@ -152,7 +152,7 @@ export class SkillUpgradeService {
 
     private static matchesTarget(
         skill:
-            SkillDefinition,
+            UpgradeDefinition,
         target:
             SkillTargetInfo,
     ): boolean {

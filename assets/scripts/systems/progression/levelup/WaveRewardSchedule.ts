@@ -5,8 +5,7 @@
  *
  * 每个小关结束后的三选一类型。
  *
- * 第 1 / 2 / 6 / 8 波负责把 4 个伙伴位置补齐。
- * 第 9 波开始不再出现招募，全部进入技能强化。
+ * 招募与成长只在关键波次出现，避免每波打断战斗。
  */
 export type WaveRewardKind =
     | 'recruit'
@@ -15,14 +14,23 @@ export type WaveRewardKind =
 const RECRUIT_WAVES =
     new Set<number>([
         1,
-        2,
         6,
-        8,
+        15,
+        25,
+    ]);
+
+const SKILL_WAVES =
+    new Set<number>([
+        3,
+        10,
+        20,
+        30,
+        35,
     ]);
 
 export function getWaveRewardKind(
     waveNumber: number,
-): WaveRewardKind {
+): WaveRewardKind | null {
     if (
         RECRUIT_WAVES.has(
             waveNumber,
@@ -31,5 +39,13 @@ export function getWaveRewardKind(
         return 'recruit';
     }
 
-    return 'skill';
+    if (
+        SKILL_WAVES.has(
+            waveNumber,
+        )
+    ) {
+        return 'skill';
+    }
+
+    return null;
 }

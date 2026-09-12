@@ -73,6 +73,42 @@ export function getEnemyDropProfile(
                         max: 1,
                     },
                 },
+                {
+                    itemId:
+                        'equipment_chest',
+                    chance: 1,
+                    amount: {
+                        min: 1,
+                        max: 1,
+                    },
+                },
+                {
+                    itemId:
+                        'weapon_sword',
+                    chance: 0.22,
+                    amount: {
+                        min: 1,
+                        max: 1,
+                    },
+                },
+                {
+                    itemId:
+                        'armor',
+                    chance: 0.22,
+                    amount: {
+                        min: 1,
+                        max: 1,
+                    },
+                },
+                {
+                    itemId:
+                        'ring',
+                    chance: 0.12,
+                    amount: {
+                        min: 1,
+                        max: 1,
+                    },
+                },
             ],
         };
     }

@@ -41,6 +41,7 @@ Battle.scene
    ├─ VirtualJoystick
    ├─ DefenseStatusUI
    ├─ BattlePartyHUD
+   ├─ ActiveSkillRuntime / BattleDebugPanel
    ├─ BattlePausePanel
    └─ Reward / Recruit / Skill panels
 ```
@@ -80,7 +81,8 @@ Boss 仍属于 BattleSystem 的特殊 Enemy：
 
 ### Level / Progression
 
-- `ChapterWaveController`：关卡/小关推进。
+- `StageCatalog`：章节关卡、地图、敌人池、预算波次、精英/Boss、奖励和解锁条件的唯一数据入口。
+- `ChapterWaveController`：消费 Stage 数据并负责关卡/小关推进，不再拥有硬编码波次数量表。
 - `BattleMapCatalog`：章节对应战斗地图主题的唯一来源；不复制战斗坐标。
 - `LevelUpChoiceController`：奖励选择编排。
 - `RecruitService`：招募候选与招募规则。
@@ -89,6 +91,26 @@ Boss 仍属于 BattleSystem 的特殊 Enemy：
 战斗场景阵型、泉水与防线坐标继续统一由 `BattleLayoutConfig` 管理；地图 Catalog 只提供关卡主题、色彩和装饰参数。
 
 招募链必须完整验证：UI -> LevelUpChoiceController -> RecruitService -> PartyState -> AI Hero spawn -> finishReward。
+
+### SkillSystem
+
+- `UpgradeCatalog`：波次结束时的属性强化；原 `SkillCatalog` 仅保留兼容导出。
+- `ActiveSkillCatalog`：职业主动技能定义。
+- `ActiveSkillRuntime`：冷却、能量与释放状态唯一来源。
+- `SkillTargeting` / `SkillEffectResolver` / `StatusEffectSystem`：统一目标选择、效果结算与持续状态。
+- HUD 只能发送 `hero-skill-intent`，不得复制主动技能状态。
+
+### Inventory / Save
+
+- `WarehouseRepository`：仓库与装备存档唯一入口，当前 schema v2，保留最近一次可恢复备份。
+- `EquipmentLoadoutService`：装备槽、穿戴和战斗属性修正唯一入口。
+
+### Battle Art / Runtime Support
+
+- `BattleArt`：正式战斗 SpriteFrame 的加载、缓存与回退入口。
+- `BattleEffectPool`：短生命周期战斗反馈节点对象池。
+- `BattleStatisticsService`：本局伤害/击杀/技能等统计唯一来源。
+- `BattleDebugPanel`：仅在 `TONIGHT_DEFENSE_DEBUG === true` 时显示，不进入普通玩家路径。
 
 ### FeatureSystem
 

@@ -25,8 +25,8 @@ import {
 } from '../../../systems/skill/runtime/SkillUpgradeService';
 
 import {
-    SkillEffectKind,
-} from '../../../systems/skill/definition/SkillCatalog';
+    UpgradeEffectKind,
+} from '../../../systems/skill/definition/UpgradeCatalog';
 
 import {
     AudioManager,
@@ -736,6 +736,7 @@ export class SkillChoiceCard {
                 28,
                 0,
                 Math.PI,
+                false,
             );
 
             g.lineTo(
@@ -882,7 +883,7 @@ export class SkillChoiceCard {
     private static createSkillIcon(
         card: Node,
         effectKind:
-            SkillEffectKind,
+            UpgradeEffectKind,
         palette:
             SkillPalette,
     ): void {
@@ -1219,7 +1220,7 @@ export class SkillChoiceCard {
 
     private static getSkillPalette(
         effectKind:
-            SkillEffectKind,
+            UpgradeEffectKind,
     ): SkillPalette {
         switch (effectKind) {
             case 'attack_percent':

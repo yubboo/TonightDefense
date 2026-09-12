@@ -59,6 +59,10 @@ import {
     BattleWorldService,
 } from '../../battle/view/BattleWorldService';
 
+import {
+    EquipmentLoadoutService,
+} from '../../inventory/equipment/EquipmentLoadoutService';
+
 const {
     ccclass,
     property,
@@ -451,6 +455,13 @@ extends Component {
         const stats =
             profession.baseStats;
 
+        EquipmentLoadoutService
+            .ensureOwnedEquipmentEquipped();
+
+        const equipment =
+            EquipmentLoadoutService
+                .getCombatModifiers();
+
         const combatant =
             hero.addComponent(
                 CharacterCombatant,
@@ -459,16 +470,22 @@ extends Component {
         combatant.setup(
             {
                 maxHp:
-                    stats.maxHp,
+                    Math.round(
+                        stats.maxHp *
+                        (1 + equipment.maxHpPercent),
+                    ),
 
                 attackPower:
-                    stats.attackPower,
+                    stats.attackPower +
+                    equipment.attackFlat,
 
                 defense:
-                    stats.defense,
+                    stats.defense +
+                    equipment.defenseFlat,
 
                 moveSpeed:
-                    stats.moveSpeed,
+                    stats.moveSpeed *
+                    (1 + equipment.moveSpeedPercent),
 
                 hpBarY: 70,
                 hpBarWidth: 66,

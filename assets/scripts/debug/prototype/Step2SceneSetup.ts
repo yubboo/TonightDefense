@@ -22,6 +22,10 @@ import {
     getBattleMapDefinition,
 } from '../../systems/level/map/BattleMapCatalog';
 
+import {
+    BattleArt,
+} from '../../ui/resources/BattleArt';
+
 const { ccclass } = _decorator;
 
 /**
@@ -267,6 +271,14 @@ export class Step2SceneSetup extends Component {
 
         this.drawEnemyFountains(
             root,
+        );
+
+        BattleArt.attach(
+            root,
+            'map-ground',
+            map.width,
+            map.height,
+            'cover',
         );
     }
 
@@ -672,6 +684,64 @@ export class Step2SceneSetup extends Component {
             node.addComponent(
                 Graphics,
             );
+
+        let formalAssetsReady = 0;
+        const hidePrototype =
+            () => {
+                formalAssetsReady += 1;
+
+                if (formalAssetsReady >= 3) {
+                    g.enabled = false;
+                }
+            };
+
+        const wallArt =
+            BattleArt.attach(
+                node,
+                'royal-wall',
+                760,
+                300,
+                'contain',
+                hidePrototype,
+                false,
+            );
+        wallArt.setPosition(
+            BATTLE_LAYOUT.wall.x,
+            BATTLE_LAYOUT.wall.y,
+            0,
+        );
+
+        const towerArt =
+            BattleArt.attach(
+                node,
+                'guardian-tower',
+                190,
+                190,
+                'contain',
+                hidePrototype,
+                false,
+            );
+        towerArt.setPosition(
+            BATTLE_LAYOUT.defenseTower.x,
+            BATTLE_LAYOUT.defenseTower.y + 42,
+            0,
+        );
+
+        const princessArt =
+            BattleArt.attach(
+                node,
+                'princess',
+                145,
+                160,
+                'contain',
+                hidePrototype,
+                false,
+            );
+        princessArt.setPosition(
+            BATTLE_LAYOUT.princess.x,
+            BATTLE_LAYOUT.princess.y,
+            0,
+        );
 
         /** 三人横排 + 一人远程后排的固定守城/复活阵位。 */
         for (

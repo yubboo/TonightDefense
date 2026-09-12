@@ -31,6 +31,10 @@ import {
     BattlePausePanel,
 } from '../panels/battle-pause/BattlePausePanel';
 
+import {
+    BattleArt,
+} from '../resources/BattleArt';
+
 interface HudLabelStyle {
     fontSize: number;
     lineHeight: number;
@@ -90,6 +94,24 @@ export class ChapterWaveHUD {
         );
 
         this.drawPanel(root);
+
+        BattleArt.attach(
+            root,
+            'top-hud-panel',
+            694,
+            134,
+            'stretch',
+            () => {
+                root.getChildByName(
+                    'HudShadow',
+                )?.destroy();
+
+                root.getChildByName(
+                    'HudPanel',
+                )?.destroy();
+            },
+        );
+
         this.createHudButtons(root);
 
         const titleNode =

@@ -53,6 +53,30 @@ import {
     BattlePartyHUD,
 } from '../../ui/hud/BattlePartyHUD';
 
+import {
+    ActiveSkillRuntime,
+} from '../../systems/skill/active/ActiveSkillRuntime';
+
+import {
+    StatusEffectSystem,
+} from '../../systems/skill/active/StatusEffectSystem';
+
+import {
+    BattleStatisticsService,
+} from '../../systems/battle/statistics/BattleStatisticsService';
+
+import {
+    BattleDebugPanel,
+} from '../../ui/hud/BattleDebugPanel';
+
+import {
+    BattleTutorialController,
+} from '../../systems/feature/tutorial/BattleTutorialController';
+
+import {
+    BattleArt,
+} from '../../ui/resources/BattleArt';
+
 const {
     ccclass,
     property,
@@ -71,6 +95,8 @@ extends Component {
     testHumanPlayerCount = 1;
 
     start(): void {
+        void BattleArt.preloadRequired();
+
         GamePerformanceSettings
             .ensureApplied();
 
@@ -100,6 +126,56 @@ extends Component {
         ) {
             this.node.addComponent(
                 BattlePartyHUD,
+            );
+        }
+
+        if (
+            !this.node.getComponent(
+                StatusEffectSystem,
+            )
+        ) {
+            this.node.addComponent(
+                StatusEffectSystem,
+            );
+        }
+
+        if (
+            !this.node.getComponent(
+                ActiveSkillRuntime,
+            )
+        ) {
+            this.node.addComponent(
+                ActiveSkillRuntime,
+            );
+        }
+
+        if (
+            !this.node.getComponent(
+                BattleStatisticsService,
+            )
+        ) {
+            this.node.addComponent(
+                BattleStatisticsService,
+            );
+        }
+
+        if (
+            !this.node.getComponent(
+                BattleDebugPanel,
+            )
+        ) {
+            this.node.addComponent(
+                BattleDebugPanel,
+            );
+        }
+
+        if (
+            !this.node.getComponent(
+                BattleTutorialController,
+            )
+        ) {
+            this.node.addComponent(
+                BattleTutorialController,
             );
         }
 

@@ -34,6 +34,7 @@ export class CharacterCombatant extends Component {
     private attackValue = 10;
     private defenseValue = 0;
     private moveSpeedValue = 100;
+    private shieldValue = 0;
 
     private deathHandler:
         CharacterDeathHandler | null = null;
@@ -51,6 +52,8 @@ export class CharacterCombatant extends Component {
 
         this.hpValue =
             this.maxHpValue;
+
+        this.shieldValue = 0;
 
         this.attackValue =
             Math.max(0, stats.attackPower);
@@ -93,11 +96,26 @@ export class CharacterCombatant extends Component {
                     ),
                 );
 
+        const absorbed =
+            Math.min(
+                this.shieldValue,
+                actualDamage,
+            );
+
+        this.shieldValue =
+            Math.max(
+                0,
+                this.shieldValue - absorbed,
+            );
+
         this.hpValue =
             Math.max(
                 0,
                 this.hpValue -
-                    actualDamage,
+                    (
+                        actualDamage -
+                        absorbed
+                    ),
             );
 
         this.refreshHpBar();
@@ -130,6 +148,21 @@ export class CharacterCombatant extends Component {
             );
 
         this.refreshHpBar();
+    }
+
+    addShield(
+        amount: number,
+    ): void {
+        if (!this.isAlive) {
+            return;
+        }
+
+        this.shieldValue =
+            Math.min(
+                this.maxHpValue,
+                this.shieldValue +
+                    Math.max(0, amount),
+            );
     }
 
     /**
@@ -199,6 +232,10 @@ export class CharacterCombatant extends Component {
 
     get isAlive(): boolean {
         return this.hpValue > 0;
+    }
+
+    get shield(): number {
+        return this.shieldValue;
     }
 
     get attackPower(): number {

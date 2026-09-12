@@ -6,13 +6,16 @@ export interface StageChestPersistState {
 }
 
 interface WarehouseSaveData {
-    version: 1;
+    version: 2;
 
     items:
         Record<string, number>;
 
     stageChests:
         Record<string, StageChestPersistState>;
+
+    equipped:
+        Record<string, string>;
 }
 
 /**
@@ -24,6 +27,9 @@ interface WarehouseSaveData {
 export class WarehouseRepository {
     private static readonly STORAGE_KEY =
         'TonightDefense.Warehouse.V1';
+
+    private static readonly BACKUP_KEY =
+        'TonightDefense.Warehouse.Backup';
 
     static loadItems():
         Record<string, number> {
@@ -155,6 +161,23 @@ export class WarehouseRepository {
         this.write(data);
     }
 
+    static loadEquipped():
+        Record<string, string> {
+        return {
+            ...this.read().equipped,
+        };
+    }
+
+    static saveEquipped(
+        equipped: Record<string, string>,
+    ): void {
+        const data = this.read();
+        data.equipped = {
+            ...equipped,
+        };
+        this.write(data);
+    }
+
     private static read():
         WarehouseSaveData {
         const raw =
@@ -176,8 +199,9 @@ export class WarehouseRepository {
                         WarehouseSaveData
                     >;
 
-            return {
-                version: 1,
+            const migrated:
+                WarehouseSaveData = {
+                version: 2,
 
                 items:
                     parsed.items &&
@@ -196,14 +220,62 @@ export class WarehouseRepository {
                             ...parsed.stageChests,
                         }
                         : {},
+
+                equipped:
+                    parsed.equipped &&
+                    typeof parsed.equipped ===
+                        'object'
+                        ? {
+                            ...parsed.equipped,
+                        }
+                        : {},
             };
+
+            return migrated;
         } catch (
             error
         ) {
             console.warn(
-                '[仓库系统] 存档读取失败，使用空仓库',
+                '[仓库系统] 主存档读取失败，尝试恢复备份',
                 error,
             );
+
+            const backupRaw =
+                sys.localStorage.getItem(
+                    this.BACKUP_KEY,
+                );
+
+            if (backupRaw) {
+                try {
+                    const backup = JSON.parse(
+                        backupRaw,
+                    ) as Partial<WarehouseSaveData>;
+
+                    return {
+                        version: 2,
+                        items:
+                            backup.items &&
+                            typeof backup.items === 'object'
+                                ? { ...backup.items }
+                                : {},
+                        stageChests:
+                            backup.stageChests &&
+                            typeof backup.stageChests === 'object'
+                                ? { ...backup.stageChests }
+                                : {},
+                        equipped:
+                            backup.equipped &&
+                            typeof backup.equipped === 'object'
+                                ? { ...backup.equipped }
+                                : {},
+                    };
+                } catch (backupError) {
+                    console.warn(
+                        '[仓库系统] 备份存档也不可用',
+                        backupError,
+                    );
+                }
+            }
 
             return this.createEmpty();
         }
@@ -213,6 +285,13 @@ export class WarehouseRepository {
         data:
             WarehouseSaveData,
     ): void {
+        sys.localStorage.setItem(
+            this.BACKUP_KEY,
+            sys.localStorage.getItem(
+                this.STORAGE_KEY,
+            ) ?? '',
+        );
+
         sys.localStorage.setItem(
             this.STORAGE_KEY,
             JSON.stringify(
@@ -224,9 +303,10 @@ export class WarehouseRepository {
     private static createEmpty():
         WarehouseSaveData {
         return {
-            version: 1,
+            version: 2,
             items: {},
             stageChests: {},
+            equipped: {},
         };
     }
 }

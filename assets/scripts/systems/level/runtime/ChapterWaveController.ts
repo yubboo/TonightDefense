@@ -45,11 +45,14 @@ import {
 } from '../../battle/objective/DefenseObjectiveService';
 
 import {
-    getStandardWaveDefinition,
-    getFinalWaveDefinition,
     StandardWaveDefinition,
     FinalWaveDefinition,
 } from '../wave/ChapterWaveConfig';
+
+import {
+    getStageFinalWaveDefinition,
+    getStageWaveDefinition,
+} from '../stage/StageCatalog';
 
 import {
     getWaveRewardKind,
@@ -151,6 +154,9 @@ extends Component {
      * 才允许真正启动第1小关。
      */
     private battleStarted =
+        false;
+
+    private defeatShown =
         false;
 
     onLoad(): void {
@@ -269,10 +275,21 @@ extends Component {
         dt: number,
     ): void {
         if (
+            this.battleStarted &&
+            DefenseObjectiveService.isGameOver
+        ) {
+            if (!this.defeatShown) {
+                this.defeatShown = true;
+                this.showBattleDefeat();
+            }
+
+            return;
+        }
+
+        if (
             !this.battleStarted ||
             this.resolvingWave ||
-            DefenseObjectiveService
-                .isGameOver
+            this.defeatShown
         ) {
             return;
         }
@@ -309,7 +326,7 @@ extends Component {
             40
         ) {
             this.standardDefinition =
-                getStandardWaveDefinition(
+                getStageWaveDefinition(
                     this.chapterNumber,
                     this.currentWave,
                 );
@@ -335,7 +352,7 @@ extends Component {
             null;
 
         this.finalDefinition =
-            getFinalWaveDefinition(
+            getStageFinalWaveDefinition(
                 this.chapterNumber,
             );
 
@@ -955,6 +972,13 @@ extends Component {
                 completedWave,
             );
 
+        if (!rewardKind) {
+            this.afterReward(
+                completedWave,
+            );
+            return;
+        }
+
         const choice =
             LevelUpChoiceController
                 .instance;
@@ -1436,5 +1460,112 @@ extends Component {
         console.log(
             `[今晚守城] 第${this.chapterNumber}关 40波全部完成`,
         );
+    }
+
+    private showBattleDefeat(): void {
+        const canvas = this.node.parent;
+
+        if (!canvas) {
+            return;
+        }
+
+        const old =
+            canvas.getChildByName('BattleDefeatOverlay');
+
+        old?.destroy();
+
+        const overlay =
+            new Node('BattleDefeatOverlay');
+        overlay.layer = Layers.Enum.UI_2D;
+        canvas.addChild(overlay);
+        overlay.addComponent(UITransform)
+            .setContentSize(720, 1280);
+        overlay.addComponent(BlockInputEvents);
+
+        const shade = overlay.addComponent(Graphics);
+        shade.fillColor = new Color(18, 25, 39, 215);
+        shade.rect(-360, -640, 720, 1280);
+        shade.fill();
+
+        const titleNode = new Node('DefeatTitle');
+        titleNode.layer = Layers.Enum.UI_2D;
+        overlay.addChild(titleNode);
+        titleNode.setPosition(0, 90, 0);
+        titleNode.addComponent(UITransform)
+            .setContentSize(560, 90);
+
+        const title = titleNode.addComponent(Label);
+        title.string = '王城防线失守';
+        title.fontSize = 54;
+        title.lineHeight = 66;
+        title.color = new Color(255, 219, 190, 255);
+
+        const detailNode = new Node('DefeatDetail');
+        detailNode.layer = Layers.Enum.UI_2D;
+        overlay.addChild(detailNode);
+        detailNode.setPosition(0, 15, 0);
+        detailNode.addComponent(UITransform)
+            .setContentSize(520, 52);
+
+        const detail = detailNode.addComponent(Label);
+        detail.string = `坚持至第 ${this.currentWave}/40 波`;
+        detail.fontSize = 25;
+        detail.lineHeight = 32;
+        detail.color = new Color(225, 229, 239, 255);
+
+        this.createResultButton(
+            overlay,
+            -135,
+            -95,
+            '重新挑战',
+            () => director.loadScene('Battle'),
+        );
+
+        this.createResultButton(
+            overlay,
+            135,
+            -95,
+            '返回大厅',
+            () => director.loadScene('MainMenu'),
+        );
+
+    }
+
+    private createResultButton(
+        parent: Node,
+        x: number,
+        y: number,
+        text: string,
+        onClick: () => void,
+    ): void {
+        const button = new Node(`ResultButton_${text}`);
+        button.layer = Layers.Enum.UI_2D;
+        parent.addChild(button);
+        button.setPosition(x, y, 0);
+        button.addComponent(UITransform)
+            .setContentSize(230, 72);
+
+        const graphics = button.addComponent(Graphics);
+        graphics.fillColor = new Color(38, 82, 142, 255);
+        graphics.roundRect(-115, -36, 230, 72, 16);
+        graphics.fill();
+        graphics.strokeColor = new Color(238, 191, 82, 255);
+        graphics.lineWidth = 4;
+        graphics.roundRect(-113, -34, 226, 68, 14);
+        graphics.stroke();
+
+        const labelNode = new Node('Text');
+        labelNode.layer = Layers.Enum.UI_2D;
+        button.addChild(labelNode);
+        labelNode.addComponent(UITransform)
+            .setContentSize(200, 52);
+
+        const label = labelNode.addComponent(Label);
+        label.string = text;
+        label.fontSize = 27;
+        label.lineHeight = 34;
+        label.color = new Color(255, 247, 222, 255);
+
+        button.on(Node.EventType.TOUCH_END, onClick);
     }
 }

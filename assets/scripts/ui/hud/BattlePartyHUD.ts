@@ -41,6 +41,11 @@ import {
     HeroPortraitResolver,
 } from '../panels/hero-select/HeroPortraitResolver';
 
+import {
+    BattleArt,
+    BattleArtKey,
+} from '../resources/BattleArt';
+
 const { ccclass } = _decorator;
 
 interface PartyCardView {
@@ -64,10 +69,20 @@ export interface HeroSkillIntent {
     slotIndex: number;
 }
 
+export interface HeroSkillState {
+    cooldownRemaining: readonly number[];
+    energy: number;
+    maxEnergy: number;
+    names: readonly string[];
+}
+
 @ccclass('BattlePartyHUD')
 export class BattlePartyHUD extends Component {
     static readonly SKILL_INTENT_EVENT =
         'hero-skill-intent';
+
+    static readonly SKILL_STATE_EVENT =
+        'active-skill-state';
 
     private root:
         Node | null = null;
@@ -76,6 +91,15 @@ export class BattlePartyHUD extends Component {
         PartyCardView[] = [];
 
     private refreshTimer = 0;
+
+    private readonly skillCooldownMasks:
+        Node[] = [];
+
+    private readonly skillCooldownLabels:
+        Label[] = [];
+
+    private skillDockTitle:
+        Label | null = null;
 
     start(): void {
         const canvas =
@@ -115,6 +139,12 @@ export class BattlePartyHUD extends Component {
 
         this.root = root;
 
+        this.node.on(
+            BattlePartyHUD.SKILL_STATE_EVENT,
+            this.onSkillState,
+            this,
+        );
+
         this.createCommandDeck(
             root,
         );
@@ -138,6 +168,12 @@ export class BattlePartyHUD extends Component {
     }
 
     onDestroy(): void {
+        this.node.off(
+            BattlePartyHUD.SKILL_STATE_EVENT,
+            this.onSkillState,
+            this,
+        );
+
         if (
             this.root?.isValid
         ) {
@@ -146,6 +182,9 @@ export class BattlePartyHUD extends Component {
 
         this.root = null;
         this.cards.length = 0;
+        this.skillCooldownMasks.length = 0;
+        this.skillCooldownLabels.length = 0;
+        this.skillDockTitle = null;
     }
 
     private createCommandDeck(
@@ -285,6 +324,14 @@ export class BattlePartyHUD extends Component {
             root.addComponent(
                 Graphics,
             );
+
+        BattleArt.attach(
+            root,
+            'party-card-frame',
+            width,
+            height,
+            'stretch',
+        );
 
         g.fillColor =
             new Color(
@@ -545,10 +592,10 @@ export class BattlePartyHUD extends Component {
     private createSkillDock(
         parent: Node,
     ): void {
-        this.createLabel(
+        this.skillDockTitle = this.createLabel(
             parent,
             'SkillDockTitle',
-            '主角战技',
+            '主角战技 · 能量 100',
             248,
             -338,
             14,
@@ -615,6 +662,14 @@ export class BattlePartyHUD extends Component {
                     ),
             },
         ];
+
+        const iconAssets:
+            readonly BattleArtKey[] = [
+                'skill-flame-bolt',
+                'skill-flame-ring',
+                'skill-crimson-guard',
+                'skill-meteor',
+            ];
 
         specs.forEach(
             (spec, index) => {
@@ -696,7 +751,7 @@ export class BattlePartyHUD extends Component {
                 );
                 g.stroke();
 
-                this.createLabel(
+                const fallbackIcon = this.createLabel(
                     button,
                     'Icon',
                     spec.label,
@@ -713,6 +768,70 @@ export class BattlePartyHUD extends Component {
                         255,
                     ),
                 );
+
+                const iconHolder =
+                    new Node('SkillIconSprite');
+
+                iconHolder.layer =
+                    Layers.Enum.UI_2D;
+                button.addChild(iconHolder);
+                iconHolder.addComponent(
+                    UITransform,
+                ).setContentSize(
+                    spec.radius * 1.6,
+                    spec.radius * 1.6,
+                );
+
+                BattleArt.attach(
+                    iconHolder,
+                    iconAssets[index],
+                    spec.radius * 1.6,
+                    spec.radius * 1.6,
+                    'cover',
+                    () => {
+                        fallbackIcon.node.active = false;
+                    },
+                );
+
+                const cooldownMask =
+                    new Node('CooldownMask');
+
+                cooldownMask.layer =
+                    Layers.Enum.UI_2D;
+                button.addChild(cooldownMask);
+                cooldownMask.addComponent(
+                    UITransform,
+                ).setContentSize(
+                    spec.radius * 1.8,
+                    spec.radius * 1.8,
+                );
+
+                const maskGraphics =
+                    cooldownMask.addComponent(Graphics);
+                maskGraphics.fillColor =
+                    new Color(7, 14, 28, 185);
+                maskGraphics.circle(
+                    0,
+                    0,
+                    spec.radius,
+                );
+                maskGraphics.fill();
+
+                const cooldownLabel =
+                    this.createLabel(
+                        cooldownMask,
+                        'CooldownText',
+                        '',
+                        0,
+                        0,
+                        Math.max(18, spec.radius * 0.7),
+                        spec.radius * 1.5,
+                        new Color(255, 247, 220, 255),
+                    );
+
+                cooldownMask.active = false;
+                this.skillCooldownMasks.push(cooldownMask);
+                this.skillCooldownLabels.push(cooldownLabel);
 
                 button.on(
                     Node.EventType
@@ -768,6 +887,33 @@ export class BattlePartyHUD extends Component {
                 );
             },
         );
+    }
+
+    private onSkillState(
+        state: HeroSkillState,
+    ): void {
+        if (this.skillDockTitle) {
+            this.skillDockTitle.string =
+                `主角战技 · 能量 ${Math.floor(state.energy)}/${state.maxEnergy}`;
+        }
+
+        for (
+            let i = 0;
+            i < this.skillCooldownMasks.length;
+            i += 1
+        ) {
+            const remaining =
+                state.cooldownRemaining[i] ?? 0;
+            const active = remaining > 0.05;
+
+            this.skillCooldownMasks[i].active = active;
+            this.skillCooldownLabels[i].string =
+                active
+                    ? remaining.toFixed(
+                        remaining < 10 ? 1 : 0,
+                    )
+                    : '';
+        }
     }
 
     private refreshRoster(): void {

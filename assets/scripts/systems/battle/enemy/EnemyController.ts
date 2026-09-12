@@ -71,6 +71,10 @@ import {
     BossHealthHUD,
 } from '../../../ui/hud/BossHealthHUD';
 
+import {
+    BattleStatisticsService,
+} from '../statistics/BattleStatisticsService';
+
 const {
     ccclass,
     property,
@@ -700,6 +704,86 @@ extends Component {
             maxDistance,
             bounds,
         );
+    }
+
+    findEnemiesInRadius(
+        position: Vec3 | Vec2,
+        radius: number,
+    ): EnemyTarget[] {
+        const radiusSq =
+            Math.max(0, radius) *
+            Math.max(0, radius);
+
+        const result:
+            EnemyTarget[] = [];
+
+        for (const enemy of this.enemies) {
+            if (
+                enemy.hp <= 0 ||
+                !enemy.node.isValid
+            ) {
+                continue;
+            }
+
+            const dx =
+                enemy.node.position.x -
+                position.x;
+            const dy =
+                enemy.node.position.y -
+                position.y;
+
+            if (dx * dx + dy * dy > radiusSq) {
+                continue;
+            }
+
+            result.push({
+                id: enemy.id,
+                node: enemy.node,
+                archetype: enemy.archetype,
+                rank: enemy.rank,
+            });
+        }
+
+        return result;
+    }
+
+    damageEnemiesInRadius(
+        position: Vec3 | Vec2,
+        radius: number,
+        rawDamage: number,
+        knockback = 0,
+    ): number {
+        const targets =
+            this.findEnemiesInRadius(
+                position,
+                radius,
+            );
+
+        for (const target of targets) {
+            if (knockback > 0) {
+                const pos = target.node.position;
+                const dx = pos.x - position.x;
+                const dy = pos.y - position.y;
+                const length =
+                    Math.max(
+                        0.001,
+                        Math.sqrt(dx * dx + dy * dy),
+                    );
+
+                target.node.setPosition(
+                    pos.x + dx / length * knockback,
+                    pos.y + dy / length * knockback,
+                    pos.z,
+                );
+            }
+
+            this.takeDamageToEnemy(
+                target.node,
+                rawDamage,
+            );
+        }
+
+        return targets.length;
     }
 
     private findNearestEnemyInternal(
@@ -1484,6 +1568,14 @@ extends Component {
                     ),
                 );
 
+        BattleStatisticsService.instance
+            ?.recordDamage(
+                Math.min(
+                    enemy.hp,
+                    actualDamage,
+                ),
+            );
+
         enemy.hp =
             Math.max(
                 0,
@@ -1523,6 +1615,9 @@ extends Component {
             enemy.node
                 .position
                 .clone();
+
+        BattleStatisticsService.instance
+            ?.recordEnemyDefeated();
 
         ExperienceSystem.instance
             ?.addExp(
@@ -1809,6 +1904,7 @@ extends Component {
                 14,
                 -1.2,
                 1.2,
+                false,
             );
 
             g.stroke();
