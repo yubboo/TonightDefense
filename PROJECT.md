@@ -3,7 +3,7 @@
 ## 项目信息
 
 - 项目名：TonightDefense
-- 当前整理包版本：v0.6.2
+- 当前整理包版本：v0.6.3
 - Cocos Creator：3.8.8
 - 目标平台：微信小游戏
 
@@ -19,6 +19,16 @@ AI / Agent / 自动化修改项目时，统一遵循项目根目录 `AGENTS.md`�
 
 源码包不包含 `library`、`temp`、`build`、`native` 等自动生成目录，以减少缓存污染和 Windows 路径过长问题。
 源码包包含 `design-reference/` 共享设计素材库，便于 GitHub 与网页端 AI 按正式设计继续开发。
+
+## v0.6.3 战斗背景 / 手机视口统一适配
+
+- 以 GitHub v0.6.2 `452b482` 为 Last Known Good；本轮只修战场空间与正式背景的坐标/视口适配，不改英雄技能、波次、Boss、暂停、音频或存档事实链。
+- 根因确认：正式 `battle_ground` 是 900 × 1600（9:16），旧逻辑地图却是 2200 × 2300；`BattleArt` 用 `cover` 放入近方形世界后，背景实际显示高度约 3911，导致手机视口只落在大背景中央一小块。
+- `BattleLayoutConfig` 的逻辑地图改为和正式背景一致的 900 × 1600 坐标系；英雄活动区、怪物泉水、伙伴阵位、防线/公主坐标按旧布局比例迁移，避免背景和玩法各用一套空间。
+- `BattleWorldService` 成为战场 viewport scale 唯一来源：运行时按 `max(visibleWidth / 900, visibleHeight / 1600)` 做统一 cover 缩放。720 × 1280 正好为 0.8；更长手机优先填满高度，只裁左右树林出血。
+- `BattleCameraController` 不再读取固定 `worldScale` 计算 hero screen/clamp；每 0.5 秒在同一次 viewport 刷新中同步世界缩放和边界，兼容 Creator 设备预览切换与长屏比例。
+- 地图正式 Sprite 改为精确铺满 900 × 1600 逻辑地图，避免资源层再次偷偷执行第二次 cover 放大。
+- HUD 仍直接挂 Canvas，不跟随 BattleWorldRoot 缩放/移动；本轮不改变技能 HUD、五人卡、摇杆等 UI 业务状态。
 
 ## v0.6.2 CombatEvent / EnemyStatus 与职业高级机制
 

@@ -13,6 +13,7 @@ import {
     Layers,
     Node,
     UITransform,
+    view as cocosView,
 } from 'cc';
 
 import {
@@ -22,6 +23,9 @@ import {
 export class BattleWorldService {
     private static worldRootValue:
         Node | null = null;
+
+    private static worldScaleValue =
+        BATTLE_LAYOUT.view.worldScale;
 
     static ensure(
         canvas: Node,
@@ -34,6 +38,9 @@ export class BattleWorldService {
             cached.isValid &&
             cached.parent === canvas
         ) {
+            this.applyBaseTransform(
+                cached,
+            );
             return cached;
         }
 
@@ -93,17 +100,91 @@ export class BattleWorldService {
     static reset(): void {
         this.worldRootValue =
             null;
+
+        this.worldScaleValue =
+            BATTLE_LAYOUT.view.worldScale;
+    }
+
+    /**
+     * v0.6.3：背景/玩法世界统一按当前真实可见视口做 cover。
+     *
+     * 900 × 1600 是正式战斗背景与逻辑地图共同使用的 9:16 基准。
+     * 720 × 1280 时比例正好是 0.8；更长的手机会按高度放大，
+     * 只裁掉左右树林出血，不再把“手机视口”缩成大背景中央的一块。
+     */
+    static refreshViewportScale(
+        root?: Node | null,
+    ): number {
+        const target =
+            root ??
+            this.worldRootValue;
+
+        const visibleSize =
+            cocosView.getVisibleSize();
+
+        const scaleX =
+            visibleSize.width > 0
+                ? visibleSize.width /
+                    BATTLE_LAYOUT.map.width
+                : 0;
+
+        const scaleY =
+            visibleSize.height > 0
+                ? visibleSize.height /
+                    BATTLE_LAYOUT.map.height
+                : 0;
+
+        const resolved =
+            Number.isFinite(scaleX) &&
+            Number.isFinite(scaleY) &&
+            scaleX > 0 &&
+            scaleY > 0
+                ? Math.max(
+                    scaleX,
+                    scaleY,
+                )
+                : BATTLE_LAYOUT
+                    .view
+                    .worldScale;
+
+        this.worldScaleValue =
+            resolved;
+
+        if (
+            target &&
+            target.isValid
+        ) {
+            target.setScale(
+                resolved,
+                resolved,
+                1,
+            );
+        }
+
+        return resolved;
+    }
+
+    static getWorldScale(
+        root?: Node | null,
+    ): number {
+        if (
+            root &&
+            root.isValid &&
+            Number.isFinite(root.scale.x) &&
+            root.scale.x > 0
+        ) {
+            return root.scale.x;
+        }
+
+        return this.worldScaleValue;
     }
 
     private static applyBaseTransform(
         root: Node,
     ): void {
-        const scale =
-            BATTLE_LAYOUT.view.worldScale;
-
         /**
-         * 热重载或版本切换后也强制同步世界尺寸，避免沿用 v0.4.8 无限地图
-         * 留下的旧 UITransform 尺寸影响有限地图边界判断与预览。
+         * 热重载或版本切换后也强制同步世界尺寸，避免沿用旧地图尺寸
+         * 影响有限地图边界判断与预览。
          */
         const transform =
             root.getComponent(
@@ -118,10 +199,8 @@ export class BattleWorldService {
             BATTLE_LAYOUT.map.height,
         );
 
-        root.setScale(
-            scale,
-            scale,
-            1,
+        this.refreshViewportScale(
+            root,
         );
     }
 }

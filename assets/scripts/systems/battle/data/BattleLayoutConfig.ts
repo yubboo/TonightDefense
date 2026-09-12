@@ -50,14 +50,19 @@ export interface CompanionCombatProfile {
 
 export const BATTLE_LAYOUT = {
     /**
-     * 路线 B —— 有边界的半固定守城战场。
-     * 横向比纵向更宽一些，允许左右拉扯；上方保留怪物区与主战区，
-     * 下方固定为玩家防守区。
+     * 有边界的竖屏守城战场。
+     * v0.6.3 后逻辑地图直接使用正式 9:16 背景坐标系；左右仍保留拉扯空间，
+     * 上方是怪物区与主战区，下方固定为玩家防守区。
      */
     map: {
         infinite: false,
-        width: 2200,
-        height: 2300,
+        /**
+         * v0.6.3：战场逻辑尺寸与正式 900 × 1600（9:16）背景一一对应。
+         * 不再让 9:16 背景以 cover 方式塞进 2200 × 2300 的近方形世界，
+         * 避免背景实际高度被放大到约 3911，手机视口只看到中间一小块。
+         */
+        width: 900,
+        height: 1600,
 
         /**
          * 视觉/玩法分区：
@@ -65,14 +70,18 @@ export const BATTLE_LAYOUT = {
          * mainZoneMinY ~ enemyZoneMinY：主战场 / 大乱斗区。
          * defenseZoneMinY ~ mainZoneMinY：玩家防守区。
          */
-        enemyZoneMinY: 250,
-        mainZoneMinY: -230,
-        defenseZoneMinY: -980,
+        enemyZoneMinY: 174,
+        mainZoneMinY: -160,
+        defenseZoneMinY: -682,
     },
 
     view: {
-        /** 保留拉远视角，避免战斗画面重新变窄。 */
-        worldScale: 0.78,
+        /**
+         * 720 × 1280 设计视口下的回退缩放。
+         * 实际运行时由 BattleWorldService 按设备可见尺寸动态执行 cover：
+         * max(viewportWidth / 900, viewportHeight / 1600)。
+         */
+        worldScale: 0.8,
 
         /** 主角默认略偏下，给上方来怪留更多视野。 */
         heroScreenY: -110,
@@ -96,7 +105,7 @@ export const BATTLE_LAYOUT = {
     heroSpawn:
         new Vec2(
             0,
-            -40,
+            -28,
         ),
 
     /**
@@ -104,10 +113,10 @@ export const BATTLE_LAYOUT = {
      * 主角可以进入上半区主动堵泉水；这是与 AI 英雄活动规则的主要区别。
      */
     heroMoveBounds: {
-        minX: -930,
-        maxX: 930,
-        minY: -320,
-        maxY: 820,
+        minX: -380,
+        maxX: 380,
+        minY: -223,
+        maxY: 570,
     },
 
     /**
@@ -117,15 +126,15 @@ export const BATTLE_LAYOUT = {
      */
     enemySpawn: {
         fountains: [
-            new Vec2(-780, 860),
-            new Vec2(-390, 910),
-            new Vec2(0, 940),
-            new Vec2(390, 910),
-            new Vec2(780, 860),
+            new Vec2(-319, 598),
+            new Vec2(-160, 633),
+            new Vec2(0, 654),
+            new Vec2(160, 633),
+            new Vec2(319, 598),
         ],
 
-        jitterX: 42,
-        jitterY: 28,
+        jitterX: 17,
+        jitterY: 20,
     },
 
     /**
@@ -138,18 +147,18 @@ export const BATTLE_LAYOUT = {
      * “伙伴”只是 AI 控制模式；人物本身仍来自统一 CharacterCatalog。
      */
     companionAnchors: [
-        new Vec2(-290, -200),
-        new Vec2(0, -225),
-        new Vec2(290, -200),
-        new Vec2(0, -315),
+        new Vec2(-119, -139),
+        new Vec2(0, -157),
+        new Vec2(119, -139),
+        new Vec2(0, -219),
     ],
 
     /** 复活位置与固定出生位完全一致。 */
     companionReviveAnchors: [
-        new Vec2(-290, -200),
-        new Vec2(0, -225),
-        new Vec2(290, -200),
-        new Vec2(0, -315),
+        new Vec2(-119, -139),
+        new Vec2(0, -157),
+        new Vec2(119, -139),
+        new Vec2(0, -219),
     ],
 
     /**
@@ -160,15 +169,15 @@ export const BATTLE_LAYOUT = {
      * 主角仍然使用 heroMoveBounds，可以由玩家自行选择是否上前堵泉水。
      */
     aiHeroMoveBounds: {
-        minX: -860,
-        maxX: 860,
-        minY: -650,
-        maxY: 260,
+        minX: -352,
+        maxX: 352,
+        minY: -452,
+        maxY: 181,
     },
 
     /** 无怪时只在各自固定阵位附近做小范围巡逻。 */
-    companionGuardPatrolRadiusX: 125,
-    companionGuardPatrolRadiusY: 88,
+    companionGuardPatrolRadiusX: 51,
+    companionGuardPatrolRadiusY: 61,
 
     companionPatrolSpeed: 62,
     companionChaseSpeedMultiplier: 1.08,
@@ -189,19 +198,19 @@ export const BATTLE_LAYOUT = {
     defenseTower:
         new Vec2(
             0,
-            -430,
+            -299,
         ),
 
     wall:
         new Vec2(
             0,
-            -545,
+            -379,
         ),
 
     princess:
         new Vec2(
             0,
-            -630,
+            -438,
         ),
 } as const;
 

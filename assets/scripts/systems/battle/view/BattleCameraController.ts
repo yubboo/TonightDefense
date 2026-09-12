@@ -133,7 +133,10 @@ extends Component {
             BATTLE_LAYOUT.view;
 
         const scale =
-            view.worldScale;
+            BattleWorldService
+                .getWorldScale(
+                    root,
+                );
 
         const heroScreenX =
             this.currentX +
@@ -265,7 +268,7 @@ extends Component {
                 BATTLE_LAYOUT
                     .heroSpawn
                     .y *
-                    view.worldScale,
+                    this.getWorldScale(),
             );
 
         this.worldRoot
@@ -288,12 +291,9 @@ extends Component {
             return value;
         }
 
-        const view =
-            BATTLE_LAYOUT.view;
-
         const scaledHalfWidth =
             map.width *
-            view.worldScale *
+            this.getWorldScale() *
             0.5;
 
         const min =
@@ -334,7 +334,7 @@ extends Component {
 
         const scaledHalfHeight =
             map.height *
-            view.worldScale *
+            this.getWorldScale() *
             0.5;
 
         /** 地图向上推进时世界根节点向下移动。 */
@@ -351,7 +351,7 @@ extends Component {
             BATTLE_LAYOUT
                 .heroSpawn
                 .y *
-                view.worldScale;
+                this.getWorldScale();
 
         const mapSafeMax =
             -this.viewportHalfHeight -
@@ -402,6 +402,33 @@ extends Component {
             this.viewportHalfHeight =
                 visibleSize.height * 0.5;
         }
+
+        /**
+         * v0.6.3：视口尺寸和世界 cover 缩放在同一次刷新里更新。
+         * 这样编辑器切换设备预览、浏览器窗口变化或不同长屏手机都不会出现
+         * “clamp 已按新视口算，但背景还保留旧缩放”的一帧/长期错位。
+         */
+        BattleWorldService
+            .refreshViewportScale(
+                this.worldRoot,
+            );
+
+        this.currentX =
+            this.clampRootX(
+                this.currentX,
+            );
+
+        this.currentY =
+            this.clampRootY(
+                this.currentY,
+            );
+    }
+
+    private getWorldScale(): number {
+        return BattleWorldService
+            .getWorldScale(
+                this.worldRoot,
+            );
     }
 
 }

@@ -117,7 +117,9 @@ UI 不拥有冷却、等级、能量或释放状态。v0.6.1 后主动技能按�
 - `StageCatalog`：关卡内容、敌人池、Boss、奖励和解锁条件。
 - `ChapterWaveController`：波次推进唯一 Runtime。
 - `BattleMapCatalog`：地图主题。
-- `BattleLayoutConfig`：战场几何坐标唯一来源。
+- `BattleLayoutConfig`：战场几何坐标唯一来源；v0.6.3 起逻辑地图固定为正式背景原生 900 × 1600（9:16）坐标系。
+- `BattleWorldService`：战场 viewport cover 缩放唯一来源，按当前 `view.getVisibleSize()` 统一缩放背景和所有世界对象。
+- `BattleCameraController`：只负责有限地图跟随与 clamp，使用 BattleWorldRoot 的实际 scale，不再维护第二套固定缩放。
 - `BattleSceneSetup`：正式战斗世界视觉构建入口，已从 `debug/prototype` 迁入 `battle/view`。
 - `EnemyController`：普通/精英/Boss 的生命、移动、受击、死亡链事实来源。
 - `CombatEventBus`：英雄受击、敌人受击/死亡事实事件桥，不拥有生命或伤害状态。

@@ -253,6 +253,7 @@ export class BattleSceneSetup extends Component {
 
         this.drawRoyalRoad(
             g,
+            halfWidth,
             halfHeight,
         );
 
@@ -277,7 +278,7 @@ export class BattleSceneSetup extends Component {
             'map-ground',
             map.width,
             map.height,
-            'cover',
+            'stretch',
         );
     }
 
@@ -467,11 +468,18 @@ export class BattleSceneSetup extends Component {
     /** 中央道路把泉水、交战区与王城防线连成一条清晰战斗轴。 */
     private drawRoyalRoad(
         g: Graphics,
+        halfWidth: number,
         halfHeight: number,
     ): void {
         const palette =
             this.mapDefinition
                 .palette;
+
+        const bottomRoadHalf =
+            halfWidth * 0.58;
+
+        const topRoadHalf =
+            halfWidth * 0.34;
 
         g.fillColor =
             this.toColor(
@@ -479,27 +487,27 @@ export class BattleSceneSetup extends Component {
             );
 
         g.moveTo(
-            -430,
+            -bottomRoadHalf,
             -halfHeight,
         );
         g.bezierCurveTo(
-            -510,
-            -520,
-            -360,
-            250,
-            -270,
+            -bottomRoadHalf * 1.08,
+            -halfHeight * 0.43,
+            -topRoadHalf * 1.18,
+            halfHeight * 0.22,
+            -topRoadHalf,
             halfHeight,
         );
         g.lineTo(
-            270,
+            topRoadHalf,
             halfHeight,
         );
         g.bezierCurveTo(
-            360,
-            250,
-            510,
-            -520,
-            430,
+            topRoadHalf * 1.18,
+            halfHeight * 0.22,
+            bottomRoadHalf * 1.08,
+            -halfHeight * 0.43,
+            bottomRoadHalf,
             -halfHeight,
         );
         g.close();
@@ -512,42 +520,47 @@ export class BattleSceneSetup extends Component {
         g.lineWidth = 8;
 
         g.moveTo(
-            -430,
+            -bottomRoadHalf,
             -halfHeight,
         );
         g.bezierCurveTo(
-            -510,
-            -520,
-            -360,
-            250,
-            -270,
+            -bottomRoadHalf * 1.08,
+            -halfHeight * 0.43,
+            -topRoadHalf * 1.18,
+            halfHeight * 0.22,
+            -topRoadHalf,
             halfHeight,
         );
 
         g.moveTo(
-            430,
+            bottomRoadHalf,
             -halfHeight,
         );
         g.bezierCurveTo(
-            510,
-            -520,
-            360,
-            250,
-            270,
+            bottomRoadHalf * 1.08,
+            -halfHeight * 0.43,
+            topRoadHalf * 1.18,
+            halfHeight * 0.22,
+            topRoadHalf,
             halfHeight,
         );
         g.stroke();
 
-        /** 规则错开的浅色石板，保持低绘制成本同时增加地图质感。 */
+        /**
+         * Graphics 只是正式 Sprite 未就绪时的兜底。
+         * v0.6.3 后按 9:16 地图尺寸生成，避免加载瞬间仍闪出旧 2200×2300 道路。
+         */
         for (
-            let y = -1040;
-            y <= 1040;
-            y += 105
+            let y = -halfHeight + 58;
+            y <= halfHeight - 58;
+            y += 76
         ) {
             const width =
-                420 -
-                Math.abs(y) *
-                    0.035;
+                Math.max(
+                    halfWidth * 0.5,
+                    halfWidth * 0.82 -
+                        Math.abs(y) * 0.09,
+                );
 
             const offset =
                 Math.sin(
@@ -556,7 +569,7 @@ export class BattleSceneSetup extends Component {
                             .decorationSeed) *
                         0.032,
                 ) *
-                42;
+                24;
 
             g.fillColor =
                 new Color(
@@ -569,10 +582,10 @@ export class BattleSceneSetup extends Component {
             g.roundRect(
                 -width / 2 +
                     offset,
-                y - 15,
+                y - 11,
                 width,
-                30,
-                9,
+                22,
+                8,
             );
             g.fill();
         }
@@ -607,15 +620,23 @@ export class BattleSceneSetup extends Component {
                     ? -1
                     : 1;
 
+            const sideStart =
+                halfWidth * 0.68;
+
+            const sideBand =
+                Math.max(
+                    24,
+                    Math.floor(
+                        halfWidth * 0.2,
+                    ),
+                );
+
             const x =
                 side *
-                (520 +
+                (sideStart +
                     ((i * 97 +
                         seed * 13) %
-                        Math.max(
-                            120,
-                            halfWidth - 610,
-                        )));
+                        sideBand));
 
             g.fillColor =
                 i % 3 === 0
