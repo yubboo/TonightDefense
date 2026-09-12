@@ -39,6 +39,7 @@ Battle.scene
    ├─ ChapterWaveHUD
    ├─ VirtualJoystick
    ├─ DefenseStatusUI
+   ├─ BattlePartyHUD
    ├─ BattlePausePanel
    └─ Reward / Recruit / Skill panels
 ```
@@ -79,9 +80,12 @@ Boss 仍属于 BattleSystem 的特殊 Enemy：
 ### Level / Progression
 
 - `ChapterWaveController`：关卡/小关推进。
+- `BattleMapCatalog`：章节对应战斗地图主题的唯一来源；不复制战斗坐标。
 - `LevelUpChoiceController`：奖励选择编排。
 - `RecruitService`：招募候选与招募规则。
 - `PartyState`：最终队伍容量/成员状态。
+
+战斗场景阵型、泉水与防线坐标继续统一由 `BattleLayoutConfig` 管理；地图 Catalog 只提供关卡主题、色彩和装饰参数。
 
 招募链必须完整验证：UI -> LevelUpChoiceController -> RecruitService -> PartyState -> AI Hero spawn -> finishReward。
 

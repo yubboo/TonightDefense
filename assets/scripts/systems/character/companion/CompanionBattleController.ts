@@ -86,6 +86,14 @@ interface CompanionRuntime {
         Node | null;
 }
 
+export interface CompanionHudSnapshot {
+    definition: CharacterDefinition;
+    currentHp: number;
+    maxHp: number;
+    isAlive: boolean;
+    isReviving: boolean;
+}
+
 interface ProjectileRuntime {
     node: Node;
     target: Node;
@@ -97,7 +105,7 @@ interface ProjectileRuntime {
 /**
  * AI 英雄战斗控制器 V1.1
  *
- * - 四名 AI 英雄拥有固定的两行两列出生/复活阵位。
+ * - 四名 AI 英雄使用“三人横排 + 一人远程后排”的出生/复活阵位。
  * - Character / Profession 与玩家主角完全共用同一套定义。
  * - AI 只在主战场 + 防守区寻找、追击和攻击怪物，不再进入泉水区。
  * - 无可交战目标时返回各自阵位附近巡逻，保持守城阵型。
@@ -200,6 +208,34 @@ extends Component {
         }
 
         this.updateProjectiles(dt);
+    }
+
+    /**
+     * 正式战斗人物卡的只读数据入口。
+     * HUD 不持有第二份队伍或生命状态，只读取当前已部署角色。
+     */
+    getHudRoster():
+        CompanionHudSnapshot[] {
+        return this.companions.map(
+            (companion) => ({
+                definition:
+                    companion.definition,
+                currentHp:
+                    companion
+                        .combatant
+                        .currentHp,
+                maxHp:
+                    companion
+                        .combatant
+                        .maxHp,
+                isAlive:
+                    companion
+                        .combatant
+                        .isAlive,
+                isReviving:
+                    companion.reviving,
+            }),
+        );
     }
 
     spawnCompanion(

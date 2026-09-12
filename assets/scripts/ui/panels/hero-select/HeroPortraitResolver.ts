@@ -45,7 +45,7 @@ export class HeroPortraitResolver {
         return new Map(entries);
     }
 
-    private static async resolve(
+    static async resolve(
         character:
             CharacterDefinition,
     ):

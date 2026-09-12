@@ -49,6 +49,10 @@ import {
     BattleWorldService,
 } from '../../systems/battle/view/BattleWorldService';
 
+import {
+    BattlePartyHUD,
+} from '../../ui/hud/BattlePartyHUD';
+
 const {
     ccclass,
     property,
@@ -86,6 +90,16 @@ extends Component {
         ) {
             this.node.addComponent(
                 BattleCameraController,
+            );
+        }
+
+        if (
+            !this.node.getComponent(
+                BattlePartyHUD,
+            )
+        ) {
+            this.node.addComponent(
+                BattlePartyHUD,
             );
         }
 

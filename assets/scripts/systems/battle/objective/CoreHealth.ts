@@ -664,7 +664,7 @@ extends Component {
 
         root.setPosition(
             0,
-            -448,
+            448,
             0,
         );
 

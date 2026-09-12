@@ -9,13 +9,18 @@ import {
     Color,
     Component,
     Graphics,
-    Label,
     Layers,
     Node,
     UITransform,
 } from 'cc';
 import { BATTLE_LAYOUT } from '../../systems/battle/data/BattleLayoutConfig';
 import { BattleWorldService } from '../../systems/battle/view/BattleWorldService';
+import { GameplaySessionState } from '../../systems/gameplay/runtime/GameplaySessionState';
+import {
+    BattleMapColor,
+    BattleMapDefinition,
+    getBattleMapDefinition,
+} from '../../systems/level/map/BattleMapCatalog';
 
 const { ccclass } = _decorator;
 
@@ -33,6 +38,9 @@ const { ccclass } = _decorator;
 @ccclass('Step2SceneSetup')
 export class Step2SceneSetup extends Component {
 
+    private mapDefinition!:
+        BattleMapDefinition;
+
     start(): void {
         const canvas = this.node.parent;
 
@@ -46,6 +54,13 @@ export class Step2SceneSetup extends Component {
         canvas.layer = Layers.Enum.UI_2D;
         this.node.layer = Layers.Enum.UI_2D;
 
+        this.mapDefinition =
+            getBattleMapDefinition(
+                GameplaySessionState
+                    .get()
+                    .chapterNumber,
+            );
+
         const old =
             canvas.getChildByName(
                 'BattleSceneRoot',
@@ -58,7 +73,7 @@ export class Step2SceneSetup extends Component {
         this.createScene(canvas);
 
         console.log(
-            '[今晚守城] 战场视觉已清理：无调试出怪框/伙伴位置文字/假单位',
+            `[今晚守城] 战斗地图：${this.mapDefinition.name} / ${this.mapDefinition.subtitle}`,
         );
     }
 
@@ -113,10 +128,7 @@ export class Step2SceneSetup extends Component {
         this.createTopHud(root);
         this.drawDefenseLine(root);
 
-        /**
-         * BottomPanel 是屏幕 UI，不属于世界坐标。
-         * 保持直接挂 Canvas，避免镜头移动时跟着地图漂移。
-         */
+        /** 旧版四卡灰色 BottomPanel 已由正式 BattlePartyHUD 取代。 */
         const oldBottom =
             canvas.getChildByName(
                 'BottomPanel',
@@ -125,8 +137,6 @@ export class Step2SceneSetup extends Component {
         if (oldBottom) {
             oldBottom.destroy();
         }
-
-        this.createBottomPanel(canvas);
     }
 
     private drawBackground(
@@ -152,6 +162,10 @@ export class Step2SceneSetup extends Component {
         const halfHeight =
             map.height / 2;
 
+        const palette =
+            this.mapDefinition
+                .palette;
+
         const g =
             root.addComponent(
                 Graphics,
@@ -159,11 +173,8 @@ export class Step2SceneSetup extends Component {
 
         /** 整张有限战场底色。 */
         g.fillColor =
-            new Color(
-                208,
-                219,
-                176,
-                255,
+            this.toColor(
+                palette.ground,
             );
 
         g.rect(
@@ -179,11 +190,8 @@ export class Step2SceneSetup extends Component {
          * 稍深的草绿色帮助玩家一眼判断“往上就是危险区”。
          */
         g.fillColor =
-            new Color(
-                188,
-                211,
-                158,
-                245,
+            this.toColor(
+                palette.enemyZone,
             );
 
         g.rect(
@@ -197,11 +205,8 @@ export class Step2SceneSetup extends Component {
 
         /** 中间主战场：保持开阔，给大乱斗留空间。 */
         g.fillColor =
-            new Color(
-                220,
-                224,
-                184,
-                245,
+            this.toColor(
+                palette.battleZone,
             );
 
         g.rect(
@@ -215,11 +220,8 @@ export class Step2SceneSetup extends Component {
 
         /** 下半区玩家防守区：偏暖，和主战区形成自然分界。 */
         g.fillColor =
-            new Color(
-                226,
-                216,
-                177,
-                255,
+            this.toColor(
+                palette.defenseZone,
             );
 
         g.rect(
@@ -233,11 +235,8 @@ export class Step2SceneSetup extends Component {
 
         /** 最底部据点地基。 */
         g.fillColor =
-            new Color(
-                184,
-                181,
-                157,
-                255,
+            this.toColor(
+                palette.foundation,
             );
 
         g.rect(
@@ -249,40 +248,16 @@ export class Step2SceneSetup extends Component {
         );
         g.fill();
 
-        /** 主战场磨损带，避免整块地图像纯色程序底板。 */
-        g.fillColor =
-            new Color(
-                234,
-                225,
-                184,
-                120,
-            );
-
-        g.roundRect(
-            -620,
-            -185,
-            1240,
-            720,
-            250,
+        this.drawRoyalRoad(
+            g,
+            halfHeight,
         );
-        g.fill();
 
-        g.fillColor =
-            new Color(
-                238,
-                231,
-                194,
-                90,
-            );
-
-        g.roundRect(
-            -470,
-            350,
-            940,
-            480,
-            210,
+        this.drawGroundDetails(
+            g,
+            halfWidth,
+            halfHeight,
         );
-        g.fill();
 
         this.drawBattlefieldBoundaries(
             g,
@@ -302,11 +277,10 @@ export class Step2SceneSetup extends Component {
     ): void {
         /** 左右边界用密集树丛/岩石形成不可穿越视觉墙。 */
         g.fillColor =
-            new Color(
-                112,
-                151,
-                94,
-                255,
+            this.toColor(
+                this.mapDefinition
+                    .palette
+                    .foliage,
             );
 
         for (
@@ -341,11 +315,10 @@ export class Step2SceneSetup extends Component {
 
         /** 上边界稍短，形成明确的怪物泉水后场。 */
         g.fillColor =
-            new Color(
-                99,
-                137,
-                83,
-                255,
+            this.toColor(
+                this.mapDefinition
+                    .palette
+                    .foliageDark,
             );
 
         for (
@@ -365,11 +338,10 @@ export class Step2SceneSetup extends Component {
 
         /** 防守区分隔线。 */
         g.strokeColor =
-            new Color(
-                171,
-                151,
-                111,
-                165,
+            this.toColor(
+                this.mapDefinition
+                    .palette
+                    .roadEdge,
             );
         g.lineWidth = 4;
         g.moveTo(
@@ -451,11 +423,11 @@ export class Step2SceneSetup extends Component {
             g.fill();
 
             g.fillColor =
-                new Color(
-                    135,
-                    202,
-                    230,
-                    175,
+                this.toColor(
+                    this.mapDefinition
+                        .palette
+                        .accent,
+                    205,
                 );
             g.circle(
                 0,
@@ -479,6 +451,196 @@ export class Step2SceneSetup extends Component {
             );
             g.stroke();
         }
+    }
+
+    /** 中央道路把泉水、交战区与王城防线连成一条清晰战斗轴。 */
+    private drawRoyalRoad(
+        g: Graphics,
+        halfHeight: number,
+    ): void {
+        const palette =
+            this.mapDefinition
+                .palette;
+
+        g.fillColor =
+            this.toColor(
+                palette.road,
+            );
+
+        g.moveTo(
+            -430,
+            -halfHeight,
+        );
+        g.bezierCurveTo(
+            -510,
+            -520,
+            -360,
+            250,
+            -270,
+            halfHeight,
+        );
+        g.lineTo(
+            270,
+            halfHeight,
+        );
+        g.bezierCurveTo(
+            360,
+            250,
+            510,
+            -520,
+            430,
+            -halfHeight,
+        );
+        g.close();
+        g.fill();
+
+        g.strokeColor =
+            this.toColor(
+                palette.roadEdge,
+            );
+        g.lineWidth = 8;
+
+        g.moveTo(
+            -430,
+            -halfHeight,
+        );
+        g.bezierCurveTo(
+            -510,
+            -520,
+            -360,
+            250,
+            -270,
+            halfHeight,
+        );
+
+        g.moveTo(
+            430,
+            -halfHeight,
+        );
+        g.bezierCurveTo(
+            510,
+            -520,
+            360,
+            250,
+            270,
+            halfHeight,
+        );
+        g.stroke();
+
+        /** 规则错开的浅色石板，保持低绘制成本同时增加地图质感。 */
+        for (
+            let y = -1040;
+            y <= 1040;
+            y += 105
+        ) {
+            const width =
+                420 -
+                Math.abs(y) *
+                    0.035;
+
+            const offset =
+                Math.sin(
+                    (y +
+                        this.mapDefinition
+                            .decorationSeed) *
+                        0.032,
+                ) *
+                42;
+
+            g.fillColor =
+                new Color(
+                    255,
+                    247,
+                    214,
+                    32,
+                );
+
+            g.roundRect(
+                -width / 2 +
+                    offset,
+                y - 15,
+                width,
+                30,
+                9,
+            );
+            g.fill();
+        }
+    }
+
+    private drawGroundDetails(
+        g: Graphics,
+        halfWidth: number,
+        halfHeight: number,
+    ): void {
+        const seed =
+            this.mapDefinition
+                .decorationSeed;
+
+        for (
+            let i = 0;
+            i < 44;
+            i += 1
+        ) {
+            const y =
+                -halfHeight +
+                90 +
+                ((i * 173 +
+                    seed * 19) %
+                    Math.floor(
+                        halfHeight * 2 -
+                            180,
+                    ));
+
+            const side =
+                i % 2 === 0
+                    ? -1
+                    : 1;
+
+            const x =
+                side *
+                (520 +
+                    ((i * 97 +
+                        seed * 13) %
+                        Math.max(
+                            120,
+                            halfWidth - 610,
+                        )));
+
+            g.fillColor =
+                i % 3 === 0
+                    ? this.toColor(
+                        this.mapDefinition
+                            .palette
+                            .foliageDark,
+                        100,
+                    )
+                    : new Color(
+                        245,
+                        232,
+                        148,
+                        82,
+                    );
+
+            g.circle(
+                x,
+                y,
+                7 +
+                    (i % 4) * 2,
+            );
+            g.fill();
+        }
+    }
+
+    private toColor(
+        value: BattleMapColor,
+        alpha = value[3],
+    ): Color {
+        return new Color(
+            value[0],
+            value[1],
+            value[2],
+            alpha,
+        );
     }
 
     private createTopHud(
@@ -511,10 +673,7 @@ export class Step2SceneSetup extends Component {
                 Graphics,
             );
 
-        /**
-         * 四个固定伙伴复活位：平时就是防守区地面上的能量阵位，
-         * 阵亡伙伴会回到自己对应的位置接受雕像持续传输。
-         */
+        /** 三人横排 + 一人远程后排的固定守城/复活阵位。 */
         for (
             let i = 0;
             i < BATTLE_LAYOUT
@@ -582,9 +741,9 @@ export class Step2SceneSetup extends Component {
         // 石座
         g.fillColor =
             new Color(
-                138,
-                145,
-                151,
+                70,
+                82,
+                100,
                 255,
             );
 
@@ -600,9 +759,9 @@ export class Step2SceneSetup extends Component {
 
         g.fillColor =
             new Color(
-                164,
-                170,
-                176,
+                201,
+                166,
+                72,
                 255,
             );
 
@@ -619,9 +778,9 @@ export class Step2SceneSetup extends Component {
         // 雕像躯干/披风
         g.fillColor =
             new Color(
-                153,
-                160,
-                166,
+                43,
+                86,
+                148,
                 255,
             );
 
@@ -807,16 +966,16 @@ export class Step2SceneSetup extends Component {
 
         g.fillColor =
             new Color(
-                139,
-                139,
-                139,
+                117,
+                126,
+                137,
                 255,
             );
 
         g.roundRect(
-            -250,
+            -420,
             wall.y - 24,
-            500,
+            840,
             48,
             6,
         );
@@ -832,8 +991,8 @@ export class Step2SceneSetup extends Component {
             );
 
         for (
-            let x = -235;
-            x <= 205;
+            let x = -405;
+            x <= 365;
             x += 55
         ) {
             g.rect(
@@ -845,6 +1004,24 @@ export class Step2SceneSetup extends Component {
 
             g.fill();
         }
+
+        g.strokeColor =
+            new Color(
+                47,
+                76,
+                123,
+                255,
+            );
+        g.lineWidth = 7;
+        g.moveTo(
+            -410,
+            wall.y - 3,
+        );
+        g.lineTo(
+            410,
+            wall.y - 3,
+        );
+        g.stroke();
 
         // 公主占位
         const princess =
@@ -929,201 +1106,4 @@ export class Step2SceneSetup extends Component {
         g.fill();
     }
 
-    private createBottomPanel(
-        parent: Node,
-    ): void {
-        const panel =
-            new Node(
-                'BottomPanel',
-            );
-
-        panel.layer =
-            Layers.Enum.UI_2D;
-
-        parent.addChild(panel);
-
-        const g =
-            panel.addComponent(Graphics);
-
-        g.fillColor =
-            new Color(
-                210,
-                210,
-                210,
-                255,
-            );
-
-        g.rect(
-            -360,
-            -640,
-            720,
-            95,
-        );
-
-        g.fill();
-
-        // 卡槽占位
-        for (
-            let i = 0;
-            i < 4;
-            i += 1
-        ) {
-            const x =
-                -250 +
-                i * 165;
-
-            g.fillColor =
-                i < 2
-                    ? new Color(
-                        235,
-                        220,
-                        208,
-                        255,
-                    )
-                    : new Color(
-                        177,
-                        177,
-                        177,
-                        255,
-                    );
-
-            g.roundRect(
-                x,
-                -626,
-                125,
-                72,
-                7,
-            );
-
-            g.fill();
-
-            g.strokeColor =
-                new Color(
-                    44,
-                    44,
-                    44,
-                    255,
-                );
-
-            g.lineWidth = 3;
-
-            g.roundRect(
-                x,
-                -626,
-                125,
-                72,
-                7,
-            );
-
-            g.stroke();
-        }
-    }
-
-    private createSmallButton(
-        parent: Node,
-        x: number,
-        y: number,
-        text: string,
-    ): void {
-        const node =
-            new Node('HudButton');
-
-        node.layer =
-            Layers.Enum.UI_2D;
-
-        parent.addChild(node);
-
-        node.setPosition(
-            x,
-            y,
-            0,
-        );
-
-        node.addComponent(
-            UITransform,
-        ).setContentSize(
-            56,
-            56,
-        );
-
-        const g =
-            node.addComponent(
-                Graphics,
-            );
-
-        g.fillColor =
-            new Color(
-                247,
-                247,
-                247,
-                255,
-            );
-
-        g.roundRect(
-            -28,
-            -28,
-            56,
-            56,
-            5,
-        );
-
-        g.fill();
-
-        this.createLabel(
-            node,
-            text,
-            0,
-            0,
-            28,
-            50,
-        );
-    }
-
-    private createLabel(
-        parent: Node,
-        text: string,
-        x: number,
-        y: number,
-        fontSize: number,
-        width: number,
-    ): void {
-        const node =
-            new Node('Label');
-
-        node.layer =
-            Layers.Enum.UI_2D;
-
-        parent.addChild(node);
-
-        node.setPosition(
-            x,
-            y,
-            0,
-        );
-
-        node.addComponent(
-            UITransform,
-        ).setContentSize(
-            width,
-            fontSize + 12,
-        );
-
-        const label =
-            node.addComponent(Label);
-
-        label.string = text;
-        label.fontSize =
-            fontSize;
-
-        label.lineHeight =
-            fontSize + 5;
-
-        label.color =
-            new Color(
-                34,
-                34,
-                34,
-                255,
-            );
-    }
 }

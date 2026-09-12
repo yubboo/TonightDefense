@@ -92,10 +92,11 @@ export const BATTLE_LAYOUT = {
         viewportHalfHeight: 640,
     },
 
+    /** 玩家开局处于整支队伍最前方的中轴 C 位。 */
     heroSpawn:
         new Vec2(
             0,
-            -100,
+            -40,
         ),
 
     /**
@@ -130,24 +131,25 @@ export const BATTLE_LAYOUT = {
     /**
      * 四名 AI 英雄的固定出生/复活阵位：
      *
-     * 英雄1    英雄2
-     * 英雄3    英雄4
+     * 伙伴1    伙伴2    伙伴3
+     *          伙伴4（远程后排）
      *
+     * 主角在这组阵位前方的中轴 C 位。
      * “伙伴”只是 AI 控制模式；人物本身仍来自统一 CharacterCatalog。
      */
     companionAnchors: [
-        new Vec2(-175, -265),
-        new Vec2(175, -265),
-        new Vec2(-175, -435),
-        new Vec2(175, -435),
+        new Vec2(-290, -200),
+        new Vec2(0, -225),
+        new Vec2(290, -200),
+        new Vec2(0, -315),
     ],
 
     /** 复活位置与固定出生位完全一致。 */
     companionReviveAnchors: [
-        new Vec2(-175, -265),
-        new Vec2(175, -265),
-        new Vec2(-175, -435),
-        new Vec2(175, -435),
+        new Vec2(-290, -200),
+        new Vec2(0, -225),
+        new Vec2(290, -200),
+        new Vec2(0, -315),
     ],
 
     /**
@@ -187,19 +189,19 @@ export const BATTLE_LAYOUT = {
     defenseTower:
         new Vec2(
             0,
-            -410,
+            -430,
         ),
 
     wall:
         new Vec2(
             0,
-            -525,
+            -545,
         ),
 
     princess:
         new Vec2(
             0,
-            -610,
+            -630,
         ),
 } as const;
 

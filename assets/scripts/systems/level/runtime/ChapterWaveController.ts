@@ -68,6 +68,10 @@ import {
 } from '../../character/selection/HeroSelectionState';
 
 import {
+    GameplaySessionState,
+} from '../../gameplay/runtime/GameplaySessionState';
+
+import {
     StageChestService,
 } from '../stage/StageChestService';
 
@@ -164,6 +168,12 @@ extends Component {
             );
             return;
         }
+
+        /** 大厅选中的章节是关卡与地图共同使用的唯一会话来源。 */
+        this.chapterNumber =
+            GameplaySessionState
+                .get()
+                .chapterNumber;
 
         this.currentWave =
             Math.max(
