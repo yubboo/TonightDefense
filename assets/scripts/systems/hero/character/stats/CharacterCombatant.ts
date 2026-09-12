@@ -13,6 +13,11 @@ import {
     UITransform,
 } from 'cc';
 
+import {
+    CombatEventBus,
+    CombatSource,
+} from '../../../battle/combat/CombatEventBus';
+
 const { ccclass } = _decorator;
 
 export interface CharacterCombatStats {
@@ -90,6 +95,7 @@ export class CharacterCombatant extends Component {
 
     takeDamage(
         rawDamage: number,
+        source?: CombatSource,
     ): number {
         if (!this.isAlive) {
             return 0;
@@ -127,17 +133,39 @@ export class CharacterCombatant extends Component {
                 this.shieldValue - absorbed,
             );
 
+        const hpBefore =
+            this.hpValue;
+
+        const hpDamage =
+            Math.max(
+                0,
+                actualDamage - absorbed,
+            );
+
         this.hpValue =
             Math.max(
                 0,
-                this.hpValue -
-                    (
-                        actualDamage -
-                        absorbed
-                    ),
+                this.hpValue - hpDamage,
             );
 
         this.refreshHpBar();
+
+        if (actualDamage > 0) {
+            CombatEventBus.emitHeroDamaged({
+                targetNode: this.node,
+                requestedDamage: raw,
+                actualDamage,
+                hpDamage:
+                    Math.min(
+                        hpBefore,
+                        hpDamage,
+                    ),
+                shieldAbsorbed: absorbed,
+                currentHp: this.hpValue,
+                maxHp: this.maxHpValue,
+                source,
+            });
+        }
 
         if (this.hpValue <= 0) {
             /**

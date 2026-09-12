@@ -75,6 +75,15 @@ import {
     BattleStatisticsService,
 } from '../statistics/BattleStatisticsService';
 
+import {
+    CombatEventBus,
+    CombatSource,
+} from '../combat/CombatEventBus';
+
+import {
+    EnemyStatusSystem,
+} from './status/EnemyStatusSystem';
+
 const {
     ccclass,
     property,
@@ -125,6 +134,22 @@ export interface EnemyTarget {
     defense: number;
 }
 
+
+export interface EnemyDamageContext extends CombatSource {
+    defenseIgnoreRatio?: number;
+    critChance?: number;
+    critMultiplier?: number;
+    damageMultiplier?: number;
+    markedTargetBonus?: number;
+}
+
+export interface EnemyDamageResult {
+    enemyId: number;
+    actualDamage: number;
+    critical: boolean;
+    killed: boolean;
+}
+
 /**
  * 敌人查询区域。
  * AI 英雄用它限制自己只选择“实际能够进入攻击距离”的目标，
@@ -158,6 +183,7 @@ interface EnemyProjectile {
     node: Node;
     speed: number;
     damage: number;
+    enemyId: number;
 
     characterTarget:
         BattleCharacterTarget | null;
@@ -217,6 +243,7 @@ extends Component {
     onLoad(): void {
         EnemyController.instance =
             this;
+        EnemyStatusSystem.clear();
     }
 
     start(): void {
@@ -239,6 +266,7 @@ extends Component {
         );
 
         this.clearEnemyProjectiles();
+        EnemyStatusSystem.clear();
 
         this.destroyBossHud();
     }
@@ -252,6 +280,8 @@ extends Component {
         ) {
             return;
         }
+
+        EnemyStatusSystem.update(dt);
 
         /**
          * 高频循环不再 [...this.enemies] 复制数组。
@@ -585,6 +615,7 @@ extends Component {
                     canvas,
                     bossDefinition,
                     damage,
+                    enemyId,
                 )
                 : null;
 
@@ -956,7 +987,8 @@ extends Component {
     takeDamageToEnemy(
         targetNode: Node,
         rawDamage: number,
-    ): void {
+        context?: EnemyDamageContext,
+    ): EnemyDamageResult | null {
         const enemy =
             this.enemies.find(
                 (item) =>
@@ -965,12 +997,13 @@ extends Component {
             );
 
         if (!enemy) {
-            return;
+            return null;
         }
 
-        this.applyDamage(
+        return this.applyDamage(
             enemy,
             rawDamage,
+            context,
         );
     }
 
@@ -990,6 +1023,10 @@ extends Component {
             const enemy
             of copy
         ) {
+            EnemyStatusSystem.remove(
+                enemy.id,
+            );
+
             enemy.bossRuntime
                 ?.destroy();
 
@@ -1062,6 +1099,15 @@ extends Component {
 
         enemy.cooldown -= dt;
 
+        if (
+            EnemyStatusSystem
+                .isAttackLocked(
+                    enemy.id,
+                )
+        ) {
+            return;
+        }
+
         const target =
             this.selectTarget(
                 enemy,
@@ -1123,6 +1169,10 @@ extends Component {
                             ?.moveSpeedMultiplier ??
                         1
                     ) *
+                    EnemyStatusSystem
+                        .getMoveSpeedMultiplier(
+                            enemy.id,
+                        ) *
                     dt,
                 distance,
             );
@@ -1161,6 +1211,31 @@ extends Component {
          * 全部英雄死亡/不可用后，才进入
          * 雕像 -> 城墙 -> 公主 的防线顺序。
          */
+        const forcedTargetId =
+            EnemyStatusSystem
+                .getForcedTargetId(
+                    enemy.id,
+                );
+
+        if (forcedTargetId) {
+            const forcedTarget =
+                BattleTargetRegistry
+                    .getAliveById(
+                        forcedTargetId,
+                    );
+
+            if (forcedTarget) {
+                this.attackTargetScratch.kind =
+                    'character';
+                this.attackTargetScratch.target =
+                    forcedTarget;
+                this.attackTargetScratch.objective =
+                    null;
+
+                return this.attackTargetScratch;
+            }
+        }
+
         const character =
             BattleTargetRegistry
                 .findNearest(
@@ -1338,7 +1413,15 @@ extends Component {
                 )
             ) {
                 characterTarget.takeDamage(
-                    enemy.damage,
+                    enemy.damage *
+                        EnemyStatusSystem
+                            .getOutgoingDamageMultiplier(
+                                enemy.id,
+                            ),
+                    {
+                        kind: 'enemy',
+                        enemyId: enemy.id,
+                    },
                 );
             }
 
@@ -1352,7 +1435,11 @@ extends Component {
         DefenseObjectiveService
             .takeDamage(
                 target.objective,
-                enemy.damage,
+                enemy.damage *
+                    EnemyStatusSystem
+                        .getOutgoingDamageMultiplier(
+                            enemy.id,
+                        ),
             );
     }
 
@@ -1441,7 +1528,14 @@ extends Component {
                     enemy.projectileSpeed,
 
                 damage:
-                    enemy.damage,
+                    enemy.damage *
+                    EnemyStatusSystem
+                        .getOutgoingDamageMultiplier(
+                            enemy.id,
+                        ),
+
+                enemyId:
+                    enemy.id,
 
                 characterTarget:
                     target.kind ===
@@ -1536,6 +1630,11 @@ extends Component {
                     characterTarget
                         .takeDamage(
                             projectile.damage,
+                            {
+                                kind: 'enemy',
+                                enemyId:
+                                    projectile.enemyId,
+                            },
                         );
                 } else if (
                     projectile
@@ -1621,30 +1720,108 @@ extends Component {
         enemy:
             EnemyRuntime,
         rawDamage: number,
-    ): void {
+        context?: EnemyDamageContext,
+    ): EnemyDamageResult {
         if (
             enemy.hp <= 0
         ) {
-            return;
+            return {
+                enemyId: enemy.id,
+                actualDamage: 0,
+                critical: false,
+                killed: true,
+            };
         }
 
+        const requestedDamage =
+            Math.max(0, rawDamage);
+        const sourceProfessionId =
+            context?.professionId;
+        const statusMultiplier =
+            EnemyStatusSystem
+                .getIncomingDamageMultiplier(
+                    enemy.id,
+                    sourceProfessionId,
+                );
+        const markedSkillMultiplier =
+            context?.markedTargetBonus &&
+            EnemyStatusSystem
+                .isHunterMarked(
+                    enemy.id,
+                )
+                ? 1 +
+                    Math.max(
+                        0,
+                        context.markedTargetBonus,
+                    )
+                : 1;
+        const damageMultiplier =
+            Math.max(
+                0,
+                context?.damageMultiplier ?? 1,
+            ) *
+            statusMultiplier *
+            markedSkillMultiplier;
+        const critChance =
+            Math.max(
+                0,
+                Math.min(
+                    1,
+                    (context?.critChance ?? 0) +
+                    EnemyStatusSystem
+                        .getBonusCritChance(
+                            enemy.id,
+                            sourceProfessionId,
+                        ),
+                ),
+            );
+        const critical =
+            requestedDamage > 0 &&
+            critChance > 0 &&
+            Math.random() < critChance;
+        const critMultiplier =
+            critical
+                ? Math.max(
+                    1,
+                    context?.critMultiplier ?? 1.5,
+                )
+                : 1;
+        const defenseIgnore =
+            Math.max(
+                0,
+                Math.min(
+                    1,
+                    context?.defenseIgnoreRatio ?? 0,
+                ),
+            );
+        const effectiveDefense =
+            enemy.defense *
+            (1 - defenseIgnore);
+        const scaledDamage =
+            requestedDamage *
+            damageMultiplier *
+            critMultiplier;
         const actualDamage =
-            rawDamage <= 0
+            scaledDamage <= 0
                 ? 0
                 : Math.max(
                     1,
                     Math.round(
-                        rawDamage -
-                        enemy.defense,
+                        scaledDamage -
+                        effectiveDefense,
                     ),
                 );
+        const hpBefore =
+            enemy.hp;
+        const appliedDamage =
+            Math.min(
+                hpBefore,
+                actualDamage,
+            );
 
         BattleStatisticsService.instance
             ?.recordDamage(
-                Math.min(
-                    enemy.hp,
-                    actualDamage,
-                ),
+                appliedDamage,
             );
 
         enemy.hp =
@@ -1669,23 +1846,55 @@ extends Component {
             );
         }
 
-        if (
-            enemy.hp <= 0
-        ) {
+        const killed =
+            enemy.hp <= 0;
+
+        if (appliedDamage > 0) {
+            CombatEventBus.emitEnemyDamaged({
+                enemyId: enemy.id,
+                enemyNode: enemy.node,
+                rank: enemy.rank,
+                requestedDamage,
+                actualDamage: appliedDamage,
+                currentHp: enemy.hp,
+                maxHp: enemy.maxHp,
+                critical,
+                killed,
+                source: context,
+            });
+        }
+
+        if (killed) {
             this.killEnemy(
                 enemy,
+                context,
             );
         }
+
+        return {
+            enemyId: enemy.id,
+            actualDamage: appliedDamage,
+            critical,
+            killed,
+        };
     }
 
     private killEnemy(
         enemy:
             EnemyRuntime,
+        source?: CombatSource,
     ): void {
         const position =
             enemy.node
                 .position
                 .clone();
+
+        CombatEventBus.emitEnemyDefeated({
+            enemyId: enemy.id,
+            enemyNode: enemy.node,
+            rank: enemy.rank,
+            source,
+        });
 
         BattleStatisticsService.instance
             ?.recordEnemyDefeated();
@@ -1774,6 +1983,10 @@ extends Component {
 
         this.deathListener?.(
             deathEvent,
+        );
+
+        EnemyStatusSystem.remove(
+            enemy.id,
         );
 
         if (

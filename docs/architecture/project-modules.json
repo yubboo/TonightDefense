@@ -1,7 +1,7 @@
 {
   "project": "TonightDefense",
   "displayName": "今晚守城",
-  "architectureVersion": "3.0.0",
+  "architectureVersion": "3.1.0",
   "engine": "Cocos Creator 3.8.8",
   "rulesFile": "AGENTS.md",
   "domains": [
@@ -14,69 +14,142 @@
         "ProfessionCatalog owns profession combat base data",
         "ProfessionSkillCatalog owns profession skill modules",
         "ProfessionSkillRunState owns in-run skill levels",
-        "EquipmentLoadoutService owns hero equipment combat modifiers"
+        "EquipmentLoadoutService owns hero equipment combat modifiers",
+        "HeroSkillRuntime consumes CombatEventBus/EnemyStatusSystem instead of owning enemy state"
       ],
       "modules": {
-        "character": ["data", "selection", "player", "companion", "party", "stats", "visual", "animation"],
-        "profession": ["definition", "data"],
-        "skill": ["data", "runtime", "effect", "targeting", "upgrade"],
-        "progression": ["experience", "levelup", "recruitment"],
-        "equipment": ["EquipmentLoadoutService.ts"]
+        "character": [
+          "data",
+          "selection",
+          "player",
+          "companion",
+          "party",
+          "stats",
+          "visual",
+          "animation"
+        ],
+        "profession": [
+          "definition",
+          "data"
+        ],
+        "skill": [
+          "data",
+          "runtime",
+          "effect",
+          "targeting",
+          "upgrade"
+        ],
+        "progression": [
+          "experience",
+          "levelup",
+          "recruitment"
+        ],
+        "equipment": [
+          "EquipmentLoadoutService.ts"
+        ]
       }
     },
     {
       "id": "battle",
       "name": "战斗域",
       "path": "assets/scripts/systems/battle",
-      "modules": ["combat", "enemy", "objective", "targeting", "drop", "runtime", "statistics", "view", "data"]
+      "modules": [
+        "combat",
+        "enemy",
+        "objective",
+        "targeting",
+        "drop",
+        "runtime",
+        "statistics",
+        "view",
+        "data"
+      ],
+      "singleSourceRules": [
+        "EnemyController owns enemy life, movement, attack and death facts",
+        "CombatEventBus only publishes completed combat facts",
+        "EnemyStatusSystem owns enemy slow, stun, freeze, taunt and hunter mark state",
+        "BattleTargetRegistry owns live hero target registration and lookup"
+      ]
     },
     {
       "id": "level",
       "name": "关卡域",
       "path": "assets/scripts/systems/level",
-      "modules": ["stage", "wave", "map", "runtime"]
+      "modules": [
+        "stage",
+        "wave",
+        "map",
+        "runtime"
+      ]
     },
     {
       "id": "storage",
       "name": "存储/物品域",
       "path": "assets/scripts/systems/storage",
-      "modules": ["inventory", "item", "warehouse"]
+      "modules": [
+        "inventory",
+        "item",
+        "warehouse"
+      ]
     },
     {
       "id": "economy",
       "name": "经济域",
       "path": "assets/scripts/systems/economy",
-      "modules": ["currency", "legacy"]
+      "modules": [
+        "currency",
+        "legacy"
+      ]
     },
     {
       "id": "feature",
       "name": "功能域",
       "path": "assets/scripts/systems/feature",
-      "modules": ["main-menu", "pause", "settings", "stamina", "tutorial"]
+      "modules": [
+        "main-menu",
+        "pause",
+        "settings",
+        "stamina",
+        "tutorial"
+      ]
     },
     {
       "id": "gameplay",
       "name": "玩法会话域",
       "path": "assets/scripts/systems/gameplay",
-      "modules": ["mode", "rules", "runtime"]
+      "modules": [
+        "mode",
+        "rules",
+        "runtime"
+      ]
     },
     {
       "id": "reward",
       "name": "奖励域",
       "path": "assets/scripts/systems/reward",
-      "modules": ["data"]
+      "modules": [
+        "data"
+      ]
     },
     {
       "id": "account",
       "name": "账号域",
       "path": "assets/scripts/systems/account",
-      "modules": ["auth", "config", "model", "platform"]
+      "modules": [
+        "auth",
+        "config",
+        "model",
+        "platform"
+      ]
     },
     {
       "id": "audio",
       "name": "音频域",
       "path": "assets/scripts/systems/audio",
-      "modules": ["AudioManager.ts", "GameAudioSettings.ts"]
+      "modules": [
+        "AudioManager.ts",
+        "GameAudioSettings.ts"
+      ]
     }
   ]
 }

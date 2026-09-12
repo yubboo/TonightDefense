@@ -34,6 +34,10 @@ import {
 } from '../../systems/battle/targeting/BattleTargetRegistry';
 
 import {
+    CombatEventBus,
+} from '../../systems/battle/combat/CombatEventBus';
+
+import {
     GamePerformanceSettings,
 } from '../../systems/feature/settings/GamePerformanceSettings';
 
@@ -100,6 +104,12 @@ extends Component {
 
     start(): void {
         void BattleArt.preloadRequired();
+
+        /**
+         * Creator 预览热重载/场景重进时，先清掉历史 CombatEvent 监听。
+         * HeroSkillRuntime 随后再注册当前这一局的监听，避免被动重复触发。
+         */
+        CombatEventBus.clear();
 
         /** 每次进入战斗都开启新的职业技能成长状态。 */
         ProfessionSkillRunState.beginNewRun();

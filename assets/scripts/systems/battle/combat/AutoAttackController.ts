@@ -48,6 +48,8 @@ interface ProjectileState {
     speed: number;
     mode:
         ProfessionAttackMode;
+    sourceActorId: string;
+    sourceProfessionId: string;
 }
 
 @ccclass('AutoAttackController')
@@ -154,6 +156,12 @@ extends Component {
                     enemy.node,
                     combatant
                         .attackPower,
+                    {
+                        kind: 'hero-basic',
+                        actorId: 'main-hero',
+                        professionId:
+                            profession?.id,
+                    },
                 );
 
             AudioManager.playSfx(
@@ -179,6 +187,8 @@ extends Component {
                     ?.projectileSpeed ??
                     this.projectileSpeed,
                 mode,
+                'main-hero',
+                profession?.id ?? '',
             );
         }
 
@@ -206,6 +216,8 @@ extends Component {
             number,
         mode:
             ProfessionAttackMode,
+        sourceActorId: string,
+        sourceProfessionId: string,
     ): void {
         const canvas =
             this.node.parent;
@@ -333,6 +345,8 @@ extends Component {
                 speed,
 
                 mode,
+                sourceActorId,
+                sourceProfessionId,
             },
         );
     }
@@ -403,6 +417,13 @@ extends Component {
                     ?.takeDamageToEnemy(
                         projectile.target,
                         projectile.damage,
+                        {
+                            kind: 'hero-basic',
+                            actorId:
+                                projectile.sourceActorId,
+                            professionId:
+                                projectile.sourceProfessionId,
+                        },
                     );
 
                 AudioManager.playSfx(

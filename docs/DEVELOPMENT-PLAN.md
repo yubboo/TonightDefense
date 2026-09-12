@@ -4,7 +4,7 @@
 
 v0.6.1 完成第一次系统域收口：Hero、Storage、Battle、Level、Feature 等职责按业务域归档；根目录只保留真正项目入口/工具。后续新增模块优先进入现有域，不恢复 `systems/character`、`systems/skill`、`systems/inventory` 等平铺旧目录。
 
-## Phase B：英雄大系统（v0.6.1 当前重点）
+## Phase B：英雄大系统（v0.6.2 当前重点）
 
 - Character：人物身份唯一来源。
 - Profession：职业基础属性与攻击模型。
@@ -13,7 +13,7 @@ v0.6.1 完成第一次系统域收口：Hero、Storage、Battle、Level、Featur
 - Equipment：英雄穿戴关系与战斗属性修正。
 - MainMenu Hero Warehouse：人物 / 职业 / 技能 / 培养 / 装备统一入口。
 
-v0.6.1 已建立职业技能自动释放与 Lv1~Lv5 三选一骨架；下一步增加统一 CombatEvent / EnemyStatus，把坦克叠层、游侠印记、嘲讽、冻结、减速等高级状态正式数据化结算。
+v0.6.2 已增加统一 `CombatEventBus / EnemyStatusSystem`，并正式接通坦克受击叠层/嘲讽、游侠印记、法师冻结/减速与共鸣范围强化。下一步继续补齐 `pull / split-fireball / final-lightning-burst / emergency-shield` 等觉醒标签与正式状态表现。
 
 ## Phase C：战斗核心与空间
 

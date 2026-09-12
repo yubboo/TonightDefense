@@ -92,12 +92,17 @@ HeroSkillUpgradeService ← LevelUpChoiceController
     ↓ unlock / Lv2~Lv5
 HeroSkillRuntime
     ↓ each actor independent cooldown + auto cast
-SkillTargeting → SkillEffectResolver → StatusEffectSystem / EnemyController / CharacterCombatant
+SkillTargeting → SkillEffectResolver
+    ↓                         ↓
+StatusEffectSystem       EnemyStatusSystem
+(hero DoT/buffs)         (slow/stun/freeze/taunt/mark)
+    ↓                         ↑
+CharacterCombatant ← CombatEventBus → EnemyController
     ↓
 BattlePartyHUD (read-only state display)
 ```
 
-UI 不拥有冷却、等级、能量或释放状态。v0.6.1 后主动技能按钮是状态显示，不是释放入口。
+UI 不拥有冷却、等级、能量或释放状态。v0.6.1 后主动技能按钮是状态显示，不是释放入口。v0.6.2 后 Battle 与 HeroSkill 之间只通过 `CombatEventBus` 传播已发生事实；敌人控制/标记统一由 `EnemyStatusSystem` 持有。
 
 ### 英雄仓库 vs 普通仓库
 
@@ -115,6 +120,8 @@ UI 不拥有冷却、等级、能量或释放状态。v0.6.1 后主动技能按�
 - `BattleLayoutConfig`：战场几何坐标唯一来源。
 - `BattleSceneSetup`：正式战斗世界视觉构建入口，已从 `debug/prototype` 迁入 `battle/view`。
 - `EnemyController`：普通/精英/Boss 的生命、移动、受击、死亡链事实来源。
+- `CombatEventBus`：英雄受击、敌人受击/死亡事实事件桥，不拥有生命或伤害状态。
+- `EnemyStatusSystem`：敌人 slow / stun / freeze / taunt / hunter mark 唯一状态源；不复制 EnemyController。
 - `BossRuntimeController`：只增加 Boss 阶段与技能行为，不复制敌人生命链。
 
 ## 5. Cocos 资源迁移规则

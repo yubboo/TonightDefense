@@ -9,8 +9,13 @@ import {
 
 import {
     EnemyController,
+    EnemyDamageContext,
     EnemyTarget,
 } from '../../../battle/enemy/EnemyController';
+
+import {
+    EnemyStatusSystem,
+} from '../../../battle/enemy/status/EnemyStatusSystem';
 
 import {
     BattleEffectPool,
@@ -39,6 +44,12 @@ import {
 export interface SkillCastResult {
     success: boolean;
     affectedCount: number;
+    defeatedCount?: number;
+}
+
+export interface SkillCastModifiers {
+    damageMultiplier?: number;
+    radiusMultiplier?: number;
 }
 
 /**
@@ -53,6 +64,7 @@ export class SkillEffectResolver {
         allies: readonly HeroSkillActor[],
         skill: ProfessionSkillDefinition,
         level: number,
+        modifiers?: SkillCastModifiers,
     ): SkillCastResult {
         if (
             skill.kind !== 'active' ||
@@ -66,11 +78,34 @@ export class SkillEffectResolver {
             };
         }
 
-        const tuning =
+        const baseTuning =
             getSkillLevelTuning(
                 skill,
                 level,
             );
+        const damageMultiplier =
+            Math.max(
+                0,
+                modifiers?.damageMultiplier ?? 1,
+            );
+        const radiusMultiplier =
+            Math.max(
+                0.1,
+                modifiers?.radiusMultiplier ?? 1,
+            );
+        const tuning = {
+            ...baseTuning,
+            damageRatio:
+                baseTuning.damageRatio === undefined
+                    ? undefined
+                    : baseTuning.damageRatio *
+                        damageMultiplier,
+            radius:
+                baseTuning.radius === undefined
+                    ? undefined
+                    : baseTuning.radius *
+                        radiusMultiplier,
+        };
 
         switch (skill.behavior) {
             case 'self_shield': {
@@ -143,6 +178,7 @@ export class SkillEffectResolver {
             case 'chain_damage':
                 return this.castChainDamage(
                     actor,
+                    skill,
                     tuning,
                 );
 
@@ -158,6 +194,8 @@ export class SkillEffectResolver {
                     actor,
                     targets,
                     tuning,
+                    1,
+                    skill,
                 );
             }
 
@@ -172,6 +210,8 @@ export class SkillEffectResolver {
                     actor,
                     targets,
                     tuning,
+                    1,
+                    skill,
                 );
             }
 
@@ -190,14 +230,35 @@ export class SkillEffectResolver {
                         5,
                     );
 
+                const orderedTargets =
+                    tuning.specialTags
+                        ?.includes('prefer-mark')
+                        ? [...targets].sort(
+                            (left, right) =>
+                                Number(
+                                    EnemyStatusSystem
+                                        .isHunterMarked(
+                                            right.id,
+                                        ),
+                                ) -
+                                Number(
+                                    EnemyStatusSystem
+                                        .isHunterMarked(
+                                            left.id,
+                                        ),
+                                ),
+                        )
+                        : targets;
+
                 return this.damageTargets(
                     actor,
-                    targets.slice(
+                    orderedTargets.slice(
                         0,
                         maxTargets,
                     ),
                     tuning,
                     1,
+                    skill,
                 );
             }
 
@@ -221,6 +282,8 @@ export class SkillEffectResolver {
                     actor,
                     targets,
                     tuning,
+                    1,
+                    skill,
                 );
             }
 
@@ -236,6 +299,8 @@ export class SkillEffectResolver {
                         actor,
                         [target],
                         tuning,
+                        1,
+                        skill,
                     )
                     : {
                         success: false,
@@ -271,6 +336,8 @@ export class SkillEffectResolver {
                         actor,
                         [target],
                         tuning,
+                        1,
+                        skill,
                     );
 
                 if (
@@ -304,6 +371,7 @@ export class SkillEffectResolver {
                                 hitCount: 1,
                             },
                             1,
+                            skill,
                         );
                     }
                 }
@@ -694,6 +762,7 @@ export class SkillEffectResolver {
 
     private static castChainDamage(
         actor: HeroSkillActor,
+        skill: ProfessionSkillDefinition,
         tuning: ReturnType<typeof getSkillLevelTuning>,
     ): SkillCastResult {
         const first =
@@ -788,6 +857,13 @@ export class SkillEffectResolver {
                     tuning.chainFalloff ?? 0.15,
                 ),
             );
+        const context =
+            this.createDamageContext(
+                actor,
+                skill,
+                tuning,
+            );
+        let defeatedCount = 0;
 
         selected.forEach(
             (target, index) => {
@@ -798,11 +874,24 @@ export class SkillEffectResolver {
                         index,
                     );
 
-                controller.takeDamageToEnemy(
-                    target.node,
-                    actor.combatant.attackPower *
-                    ratio,
-                );
+                const result =
+                    controller.takeDamageToEnemy(
+                        target.node,
+                        actor.combatant.attackPower *
+                        ratio,
+                        context,
+                    );
+
+                if (result?.killed) {
+                    defeatedCount += 1;
+                } else {
+                    this.applyEnemyStatuses(
+                        actor,
+                        target,
+                        skill,
+                        tuning,
+                    );
+                }
 
                 this.showPulse(
                     target.node,
@@ -820,6 +909,7 @@ export class SkillEffectResolver {
         return {
             success: selected.length > 0,
             affectedCount: selected.length,
+            defeatedCount,
         };
     }
 
@@ -827,7 +917,8 @@ export class SkillEffectResolver {
         actor: HeroSkillActor,
         targets: readonly EnemyTarget[],
         tuning: ReturnType<typeof getSkillLevelTuning>,
-        hitMultiplier = 1,
+        hitMultiplier: number,
+        skill: ProfessionSkillDefinition,
     ): SkillCastResult {
         const controller =
             EnemyController.instance;
@@ -852,52 +943,137 @@ export class SkillEffectResolver {
                 0,
                 tuning.damageRatio ?? 1,
             );
-
-        for (const target of targets) {
-            let bonus = 1;
-
-            if (
-                tuning.eliteBossDamageBonus &&
-                target.rank !== 'normal'
-            ) {
-                bonus +=
-                    tuning.eliteBossDamageBonus;
-            }
-
-            controller.takeDamageToEnemy(
-                target.node,
-                actor.combatant.attackPower *
-                baseRatio *
-                hitCount *
-                hitMultiplier *
-                bonus,
-            );
-
-            if (
-                tuning.knockback &&
-                tuning.knockback > 0
-            ) {
-                this.applyKnockback(
-                    actor.node,
-                    target.node,
-                    tuning.knockback,
+        const falloffTag =
+            tuning.specialTags
+                ?.find(
+                    (tag) =>
+                        tag.startsWith(
+                            'pierce-falloff:',
+                        ),
                 );
-            }
-        }
+        const falloff =
+            falloffTag
+                ? Math.max(
+                    0,
+                    Math.min(
+                        0.9,
+                        Number(
+                            falloffTag.split(':')[1],
+                        ) || 0,
+                    ),
+                )
+                : 0;
+        const orderedTargets =
+            falloff > 0
+                ? [...targets].sort(
+                    (left, right) => {
+                        const ldx =
+                            left.node.position.x -
+                            actor.node.position.x;
+                        const ldy =
+                            left.node.position.y -
+                            actor.node.position.y;
+                        const rdx =
+                            right.node.position.x -
+                            actor.node.position.x;
+                        const rdy =
+                            right.node.position.y -
+                            actor.node.position.y;
+                        return (
+                            ldx * ldx + ldy * ldy -
+                            (rdx * rdx + rdy * rdy)
+                        );
+                    },
+                )
+                : targets;
+        const context =
+            this.createDamageContext(
+                actor,
+                skill,
+                tuning,
+            );
+        const burnTargets: Node[] = [];
+        let defeatedCount = 0;
+
+        orderedTargets.forEach(
+            (target, index) => {
+                let bonus = 1;
+
+                if (
+                    tuning.eliteBossDamageBonus &&
+                    target.rank !== 'normal'
+                ) {
+                    bonus +=
+                        tuning.eliteBossDamageBonus;
+                }
+
+                const pierceMultiplier =
+                    falloff > 0
+                        ? Math.pow(
+                            1 - falloff,
+                            index,
+                        )
+                        : 1;
+                const result =
+                    controller.takeDamageToEnemy(
+                        target.node,
+                        actor.combatant.attackPower *
+                        baseRatio *
+                        hitCount *
+                        hitMultiplier *
+                        bonus *
+                        pierceMultiplier,
+                        context,
+                    );
+
+                if (result?.killed) {
+                    defeatedCount += 1;
+                } else {
+                    this.applyEnemyStatuses(
+                        actor,
+                        target,
+                        skill,
+                        tuning,
+                    );
+
+                    if (target.node.isValid) {
+                        burnTargets.push(
+                            target.node,
+                        );
+                    }
+
+                    if (
+                        tuning.knockback &&
+                        tuning.knockback > 0
+                    ) {
+                        this.applyKnockback(
+                            actor.node,
+                            target.node,
+                            tuning.knockback,
+                        );
+                    }
+                }
+            },
+        );
 
         if (
+            burnTargets.length > 0 &&
             tuning.burnDuration &&
             tuning.burnDpsRatio
         ) {
             StatusEffectSystem.instance
                 ?.applyBurn(
-                    targets.map(
-                        (target) =>
-                            target.node,
-                    ),
+                    burnTargets,
                     tuning.burnDuration,
                     actor.combatant.attackPower *
                     tuning.burnDpsRatio,
+                    {
+                        kind: 'hero-dot',
+                        actorId: actor.actorId,
+                        professionId:
+                            actor.profession.id,
+                        skillId: skill.id,
+                    },
                 );
         }
 
@@ -925,7 +1101,142 @@ export class SkillEffectResolver {
         return {
             success: true,
             affectedCount: targets.length,
+            defeatedCount,
         };
+    }
+
+    private static createDamageContext(
+        actor: HeroSkillActor,
+        skill: ProfessionSkillDefinition,
+        tuning: ReturnType<typeof getSkillLevelTuning>,
+    ): EnemyDamageContext {
+        const critChance =
+            this.getTagNumber(
+                tuning.specialTags,
+                'skill-crit:',
+            );
+        const markedTargetBonus =
+            this.getTagNumber(
+                tuning.specialTags,
+                'mark-bonus:',
+            );
+
+        return {
+            kind: 'hero-skill',
+            actorId: actor.actorId,
+            professionId:
+                actor.profession.id,
+            skillId: skill.id,
+            defenseIgnoreRatio:
+                tuning.defenseIgnoreRatio ?? 0,
+            critChance,
+            critMultiplier: 1.5,
+            markedTargetBonus,
+        };
+    }
+
+    private static applyEnemyStatuses(
+        actor: HeroSkillActor,
+        target: EnemyTarget,
+        skill: ProfessionSkillDefinition,
+        tuning: ReturnType<typeof getSkillLevelTuning>,
+    ): void {
+        if (!target.node.isValid) {
+            return;
+        }
+
+        const tags =
+            tuning.specialTags ?? [];
+        const isTaunt =
+            tags.includes('taunt');
+        const duration =
+            Math.max(
+                0,
+                tuning.duration ?? 0,
+            );
+
+        if (isTaunt) {
+            EnemyStatusSystem.applyTaunt(
+                target.id,
+                target.rank,
+                actor.actorId,
+                Math.max(0.1, duration || 3),
+                this.getTagNumber(
+                    tags,
+                    'enemy-damage-down:',
+                ),
+                tuning.slowRatio ?? 0,
+                tuning.slowRatio
+                    ? 2
+                    : 0,
+            );
+        } else if (
+            tuning.slowRatio &&
+            tuning.slowRatio > 0
+        ) {
+            const slowRatio =
+                target.rank === 'boss'
+                    ? Math.min(
+                        0.30,
+                        tuning.slowRatio,
+                    )
+                    : tuning.slowRatio;
+
+            EnemyStatusSystem.applySlow(
+                target.id,
+                `skill:${skill.id}:slow`,
+                slowRatio,
+                Math.max(0.1, duration || 2),
+            );
+        }
+
+        if (
+            tuning.stunDuration &&
+            tuning.stunDuration > 0
+        ) {
+            if (
+                skill.id ===
+                'mage_frost_nova'
+            ) {
+                EnemyStatusSystem.applyFreeze(
+                    target.id,
+                    target.rank,
+                    `skill:${skill.id}:freeze`,
+                    tuning.stunDuration,
+                );
+            } else {
+                EnemyStatusSystem.applyStun(
+                    target.id,
+                    target.rank,
+                    `skill:${skill.id}:stun`,
+                    tuning.stunDuration,
+                );
+            }
+        }
+    }
+
+    private static getTagNumber(
+        tags: readonly string[] | undefined,
+        prefix: string,
+    ): number {
+        const tag =
+            tags?.find(
+                (entry) =>
+                    entry.startsWith(prefix),
+            );
+
+        if (!tag) {
+            return 0;
+        }
+
+        const value =
+            Number(
+                tag.slice(prefix.length),
+            );
+
+        return Number.isFinite(value)
+            ? value
+            : 0;
     }
 
     private static applyTimedModifier(

@@ -7,6 +7,10 @@ import {
     Node,
 } from 'cc';
 
+import type {
+    CombatSource,
+} from '../combat/CombatEventBus';
+
 /**
  * 所有可战斗人物统一视为 Hero。
  * 玩家主角与伙伴的唯一运行时身份差异是控制方式。
@@ -26,6 +30,7 @@ export interface BattleCharacterTarget {
 
     takeDamage: (
         amount: number,
+        source?: CombatSource,
     ) => number;
 }
 
@@ -71,6 +76,37 @@ export class BattleTargetRegistry {
         id: string,
     ): void {
         this.targets.delete(id);
+    }
+
+
+    static getAliveById(
+        id: string,
+    ): BattleCharacterTarget | null {
+        const target =
+            this.targets.get(id);
+
+        if (
+            !target ||
+            !this.isUsableTarget(
+                id,
+                target,
+            )
+        ) {
+            return null;
+        }
+
+        try {
+            return target.isAlive.call(target)
+                ? target
+                : null;
+        } catch (error) {
+            console.warn(
+                `[今晚守城] BattleTargetRegistry 移除异常目标 ${id}`,
+                error,
+            );
+            this.targets.delete(id);
+            return null;
+        }
     }
 
     /**
@@ -271,6 +307,7 @@ export class BattleTargetRegistry {
         y: number,
         radius: number,
         damage: number,
+        source?: CombatSource,
     ): number {
         const radiusSq =
             Math.max(0, radius) *
@@ -328,6 +365,7 @@ export class BattleTargetRegistry {
 
             target.takeDamage(
                 damage,
+                source,
             );
             hitCount += 1;
         }

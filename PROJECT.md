@@ -3,7 +3,7 @@
 ## 项目信息
 
 - 项目名：TonightDefense
-- 当前整理包版本：v0.6.1
+- 当前整理包版本：v0.6.2
 - Cocos Creator：3.8.8
 - 目标平台：微信小游戏
 
@@ -19,6 +19,20 @@ AI / Agent / 自动化修改项目时，统一遵循项目根目录 `AGENTS.md`�
 
 源码包不包含 `library`、`temp`、`build`、`native` 等自动生成目录，以减少缓存污染和 Windows 路径过长问题。
 源码包包含 `design-reference/` 共享设计素材库，便于 GitHub 与网页端 AI 按正式设计继续开发。
+
+## v0.6.2 CombatEvent / EnemyStatus 与职业高级机制
+
+- 以 GitHub v0.6.1 `008b2b2` 为 Last Known Good；本轮不再做大目录迁移，只补 Battle/Hero 之间的统一战斗事件与敌人状态接口。
+- 新增 `CombatEventBus`：只发布已经发生的英雄受击、敌人受击、敌人死亡事实；生命/伤害仍由 `CharacterCombatant` 与 `EnemyController` 唯一结算，技能 Runtime 不复制战斗状态。
+- 新增 `EnemyStatusSystem`：统一持有敌人 slow / stun / freeze / taunt / hunter mark；`EnemyController` 继续唯一拥有敌人的生命、移动、攻击、死亡和 Boss 链。
+- 坦克 `钢铁壁垒` 改为真实受击事件叠层；嘲讽可强制普通/精英敌人攻击施法坦克，并降低敌人输出；Boss 不强制转目标但仍受伤害降低。
+- 游侠 `猎人印记` 正式落地：游侠命中刷新印记，印记增伤、Lv4 击杀印记目标缩短击杀者技能冷却、Lv5 印记目标暴击率加成统一走 EnemyStatus/CombatEvent。
+- 法师 `元素共鸣` 的强化伤害与范围倍率正式进入统一施法结算；`冰霜新星` Lv5 对普通敌人冻结、对精英/Boss 保持减速，Boss 减速设安全上限。
+- 盾击眩晕、地面减速、嘲讽结束减速等控制效果统一进入 EnemyStatus；精英控制时长缩短，Boss 对硬控免疫，避免在各技能里散落目标特判。
+- 所有英雄普通攻击、主动技能、燃烧 DoT、敌人攻击与 Boss 技能增加 typed combat source，支持后续按来源扩展统计、被动和装备触发。
+- `GameBootstrap` 在新战斗开始前清空历史 CombatEvent 监听，避免 Creator 热重载/场景重进导致职业被动重复触发。
+- 删除历史 GitHub 写入探针空文件 `scripts/test-write`；项目根骨架不新增临时调试入口。
+- 本轮仍保留 `pull / split-fireball / final-lightning-burst / emergency-shield` 等少数职业觉醒标签供后续分批实现，不伪装成已完成效果。
 
 ## v0.6.1 英雄域收口 / 职业技能成长 / 项目骨架整理
 

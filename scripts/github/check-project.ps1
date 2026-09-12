@@ -48,6 +48,8 @@ $requiredFiles = @(
     'assets/scripts/systems/hero/character/player/MainHeroController.ts',
     'assets/scripts/systems/hero/character/companion/CompanionBattleController.ts',
     'assets/scripts/systems/battle/targeting/BattleTargetRegistry.ts',
+    'assets/scripts/systems/battle/combat/CombatEventBus.ts',
+    'assets/scripts/systems/battle/enemy/status/EnemyStatusSystem.ts',
     'assets/scripts/systems/feature/pause/BattlePauseService.ts',
     'assets/scripts/ui/panels/battle-pause/BattlePausePanel.ts',
     'assets/scripts/systems/level/runtime/ChapterWaveController.ts',

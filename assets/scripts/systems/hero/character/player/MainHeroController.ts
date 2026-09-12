@@ -518,9 +518,11 @@ extends Component {
                 takeDamage:
                     (
                         amount,
+                        source,
                     ) =>
                         combatant.takeDamage(
                             amount,
+                            source,
                         ),
             },
         );

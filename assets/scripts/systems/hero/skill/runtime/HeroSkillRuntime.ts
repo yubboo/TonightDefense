@@ -1,6 +1,7 @@
 import {
     _decorator,
     Component,
+    Node,
 } from 'cc';
 
 import {
@@ -38,6 +39,21 @@ import {
 } from '../../../battle/statistics/BattleStatisticsService';
 
 import {
+    CombatEventBus,
+    EnemyDamagedCombatEvent,
+    EnemyDefeatedCombatEvent,
+    HeroDamagedCombatEvent,
+} from '../../../battle/combat/CombatEventBus';
+
+import {
+    EnemyStatusSystem,
+} from '../../../battle/enemy/status/EnemyStatusSystem';
+
+import {
+    ProfessionId,
+} from '../../profession/definition/ProfessionTypes';
+
+import {
     HeroSkillActor,
 } from './HeroSkillActor';
 
@@ -45,12 +61,13 @@ const { ccclass } = _decorator;
 
 interface ActorSkillRuntime {
     actorId: string;
+    node: Node;
+    professionId: ProfessionId;
     cooldowns: number[];
     passiveTimer: number;
     passiveStacks: number;
     resonanceStacks: number;
     resonanceTimer: number;
-    lastHp: number;
     tankStackTimer: number;
 }
 
@@ -76,11 +93,41 @@ export class HeroSkillRuntime extends Component {
     private castTick = 0;
     private hudTimer = 0;
 
+    private unsubscribeHeroDamaged:
+        (() => void) | null = null;
+    private unsubscribeEnemyDamaged:
+        (() => void) | null = null;
+    private unsubscribeEnemyDefeated:
+        (() => void) | null = null;
+
     onLoad(): void {
         HeroSkillRuntime.instance = this;
+
+        this.unsubscribeHeroDamaged =
+            CombatEventBus.onHeroDamaged(
+                (event) =>
+                    this.onHeroDamaged(event),
+            );
+        this.unsubscribeEnemyDamaged =
+            CombatEventBus.onEnemyDamaged(
+                (event) =>
+                    this.onEnemyDamaged(event),
+            );
+        this.unsubscribeEnemyDefeated =
+            CombatEventBus.onEnemyDefeated(
+                (event) =>
+                    this.onEnemyDefeated(event),
+            );
     }
 
     onDestroy(): void {
+        this.unsubscribeHeroDamaged?.();
+        this.unsubscribeEnemyDamaged?.();
+        this.unsubscribeEnemyDefeated?.();
+        this.unsubscribeHeroDamaged = null;
+        this.unsubscribeEnemyDamaged = null;
+        this.unsubscribeEnemyDefeated = null;
+
         this.actors.clear();
 
         if (
@@ -125,9 +172,6 @@ export class HeroSkillRuntime extends Component {
                     runtime,
                     dt,
                 );
-
-            runtime.lastHp =
-                actor.combatant.currentHp;
 
             for (
                 let i = 0;
@@ -245,6 +289,10 @@ export class HeroSkillRuntime extends Component {
                     {
                         actorId:
                             actor.actorId,
+                        node:
+                            actor.node,
+                        professionId:
+                            actor.profession.id,
                         cooldowns: [
                             0.25,
                             0.45,
@@ -255,11 +303,20 @@ export class HeroSkillRuntime extends Component {
                         passiveStacks: 0,
                         resonanceStacks: 0,
                         resonanceTimer: 0,
-                        lastHp:
-                            actor.combatant.currentHp,
                         tankStackTimer: 0,
                     },
                 );
+            } else {
+                const existing =
+                    this.actors.get(
+                        actor.actorId,
+                    );
+
+                if (existing) {
+                    existing.node = actor.node;
+                    existing.professionId =
+                        actor.profession.id;
+                }
             }
         }
 
@@ -348,35 +405,22 @@ export class HeroSkillRuntime extends Component {
                     runtime.resonanceStacks >=
                         3;
 
-                if (empowered) {
-                    const damageTag =
-                        passiveTuning
-                            .specialTags
-                            ?.find(
-                                (tag) =>
-                                    tag.startsWith(
-                                        'empower-damage:',
-                                    ),
-                            );
-                    const bonus =
-                        damageTag
-                            ? Number(
-                                damageTag.split(':')[1],
-                            )
-                            : 0.30;
-
-                    actor.combatant.setModifier(
-                        'skill:elemental-resonance-cast',
-                        {
-                            attackMultiplier:
-                                1 +
-                                Math.max(
-                                    0,
-                                    bonus,
-                                ),
-                        },
-                    );
-                }
+                const empoweredDamageBonus =
+                    empowered
+                        ? this.getTagNumber(
+                            passiveTuning.specialTags,
+                            'empower-damage:',
+                            0.30,
+                        )
+                        : 0;
+                const empoweredRadiusBonus =
+                    empowered
+                        ? this.getTagNumber(
+                            passiveTuning.specialTags,
+                            'empower-radius:',
+                            0.20,
+                        )
+                        : 0;
 
                 const result =
                     SkillEffectResolver.cast(
@@ -384,13 +428,23 @@ export class HeroSkillRuntime extends Component {
                         battleActors,
                         skill,
                         level,
+                        empowered
+                            ? {
+                                damageMultiplier:
+                                    1 +
+                                    Math.max(
+                                        0,
+                                        empoweredDamageBonus,
+                                    ),
+                                radiusMultiplier:
+                                    1 +
+                                    Math.max(
+                                        0,
+                                        empoweredRadiusBonus,
+                                    ),
+                            }
+                            : undefined,
                     );
-
-                if (empowered) {
-                    actor.combatant.removeModifier(
-                        'skill:elemental-resonance-cast',
-                    );
-                }
 
                 if (!result.success) {
                     continue;
@@ -427,7 +481,7 @@ export class HeroSkillRuntime extends Component {
                 const baseCooldown =
                     tuning.cooldown ??
                     skill.baseCooldown;
-                const refund =
+                const empoweredRefund =
                     empowered
                         ? Math.max(
                             0,
@@ -439,12 +493,29 @@ export class HeroSkillRuntime extends Component {
                             ),
                         )
                         : 0;
+                const killRefund =
+                    result.defeatedCount &&
+                    result.defeatedCount > 0 &&
+                    tuning.specialTags
+                        ?.includes('kill-refund')
+                        ? Math.max(
+                            0,
+                            Math.min(
+                                0.8,
+                                tuning.cooldownRefundRatio ?? 0,
+                            ),
+                        )
+                        : 0;
+                const totalRefund =
+                    1 -
+                    (1 - empoweredRefund) *
+                    (1 - killRefund);
 
                 runtime.cooldowns[slot] =
                     Math.max(
                         0.25,
                         baseCooldown *
-                        (1 - refund),
+                        (1 - totalRefund),
                     );
 
                 BattleStatisticsService
@@ -612,29 +683,13 @@ export class HeroSkillRuntime extends Component {
                         ) || 5,
                     )
                     : 5;
-            const wasHit =
-                actor.combatant.currentHp +
-                    0.01 <
-                runtime.lastHp;
-
             runtime.tankStackTimer =
                 Math.max(
                     0,
                     runtime.tankStackTimer - dt,
                 );
 
-            if (wasHit) {
-                runtime.passiveStacks =
-                    Math.min(
-                        maxStacks,
-                        runtime.passiveStacks + 1,
-                    );
-                runtime.tankStackTimer =
-                    Math.max(
-                        0.5,
-                        tuning.duration ?? 4,
-                    );
-            } else if (
+            if (
                 runtime.tankStackTimer <= 0
             ) {
                 runtime.passiveStacks = 0;
@@ -715,6 +770,201 @@ export class HeroSkillRuntime extends Component {
         }
 
         return 1;
+    }
+
+    private onHeroDamaged(
+        event: HeroDamagedCombatEvent,
+    ): void {
+        if (event.actualDamage <= 0) {
+            return;
+        }
+
+        for (const runtime of this.actors.values()) {
+            if (
+                runtime.node !==
+                event.targetNode
+            ) {
+                continue;
+            }
+
+            const module =
+                getProfessionSkillModule(
+                    runtime.professionId,
+                );
+
+            if (
+                module.passive.id !==
+                'tank_iron_wall'
+            ) {
+                return;
+            }
+
+            const level =
+                ProfessionSkillRunState
+                    .getLevel(
+                        runtime.professionId,
+                        module.passive.id,
+                    );
+            const tuning =
+                getSkillLevelTuning(
+                    module.passive,
+                    level,
+                );
+            const maxStacks =
+                Math.max(
+                    1,
+                    this.getTagNumber(
+                        tuning.specialTags,
+                        'hit-stack:',
+                        5,
+                    ),
+                );
+
+            runtime.passiveStacks =
+                Math.min(
+                    maxStacks,
+                    runtime.passiveStacks + 1,
+                );
+            runtime.tankStackTimer =
+                Math.max(
+                    0.5,
+                    tuning.duration ?? 4,
+                );
+            return;
+        }
+    }
+
+    private onEnemyDamaged(
+        event: EnemyDamagedCombatEvent,
+    ): void {
+        if (
+            event.killed ||
+            event.source?.professionId !==
+                'ranger'
+        ) {
+            return;
+        }
+
+        ProfessionSkillRunState
+            .ensureProfession('ranger');
+
+        const module =
+            getProfessionSkillModule(
+                'ranger',
+            );
+        const passive =
+            module.passive;
+
+        if (
+            passive.id !==
+            'ranger_hunters_mark'
+        ) {
+            return;
+        }
+
+        const level =
+            ProfessionSkillRunState
+                .getLevel(
+                    'ranger',
+                    passive.id,
+                );
+        const tuning =
+            getSkillLevelTuning(
+                passive,
+                level,
+            );
+
+        EnemyStatusSystem.applyHunterMark(
+            event.enemyId,
+            tuning.duration ?? 5,
+            this.getTagNumber(
+                tuning.specialTags,
+                'hunter-mark:',
+                0.05,
+            ),
+            this.getTagNumber(
+                tuning.specialTags,
+                'mark-kill-cdr:',
+                0,
+            ),
+            this.getTagNumber(
+                tuning.specialTags,
+                'mark-crit:',
+                0,
+            ),
+        );
+    }
+
+    private onEnemyDefeated(
+        event: EnemyDefeatedCombatEvent,
+    ): void {
+        if (
+            event.source?.professionId !==
+                'ranger' ||
+            !event.source.actorId
+        ) {
+            return;
+        }
+
+        const mark =
+            EnemyStatusSystem
+                .getHunterMark(
+                    event.enemyId,
+                );
+
+        if (
+            !mark ||
+            mark.killCooldownReduction <= 0
+        ) {
+            return;
+        }
+
+        const runtime =
+            this.actors.get(
+                event.source.actorId,
+            );
+
+        if (!runtime) {
+            return;
+        }
+
+        for (
+            let i = 0;
+            i < runtime.cooldowns.length;
+            i += 1
+        ) {
+            runtime.cooldowns[i] =
+                Math.max(
+                    0,
+                    runtime.cooldowns[i] -
+                    mark.killCooldownReduction,
+                );
+        }
+    }
+
+    private getTagNumber(
+        tags: readonly string[] | undefined,
+        prefix: string,
+        fallback: number,
+    ): number {
+        const tag =
+            tags?.find(
+                (entry) =>
+                    entry.startsWith(prefix),
+            );
+
+        if (!tag) {
+            return fallback;
+        }
+
+        const value =
+            Number(
+                tag.slice(prefix.length),
+            );
+
+        return Number.isFinite(value)
+            ? value
+            : fallback;
     }
 
     private emitMainHeroState(): void {

@@ -110,6 +110,8 @@ interface ProjectileRuntime {
     damage: number;
     speed: number;
     mode: ProfessionAttackMode;
+    sourceActorId: string;
+    sourceProfessionId: string;
 }
 
 /**
@@ -444,7 +446,7 @@ extends Component {
                         !runtime.reviving,
 
                 takeDamage:
-                    (amount) => {
+                    (amount, source) => {
                         if (runtime.reviving) {
                             return 0;
                         }
@@ -453,6 +455,7 @@ extends Component {
                             combatant
                                 .takeDamage(
                                     amount,
+                                    source,
                                 );
 
                         if (
@@ -1369,6 +1372,15 @@ extends Component {
                 ?.takeDamageToEnemy(
                     enemy.node,
                     damage,
+                    {
+                        kind: 'hero-basic',
+                        actorId:
+                            this.getRegistryId(
+                                companion.definition.id,
+                            ),
+                        professionId:
+                            companion.profession.id,
+                    },
                 );
 
             this.showMeleeSlash(
@@ -1510,6 +1522,12 @@ extends Component {
                     companion
                         .profession
                         .attackMode,
+                sourceActorId:
+                    this.getRegistryId(
+                        companion.definition.id,
+                    ),
+                sourceProfessionId:
+                    companion.profession.id,
             },
         );
     }
@@ -1576,6 +1594,13 @@ extends Component {
                     ?.takeDamageToEnemy(
                         projectile.target,
                         projectile.damage,
+                        {
+                            kind: 'hero-basic',
+                            actorId:
+                                projectile.sourceActorId,
+                            professionId:
+                                projectile.sourceProfessionId,
+                        },
                     );
 
                 this.showProjectileHit(

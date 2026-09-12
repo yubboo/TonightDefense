@@ -8,6 +8,10 @@ import {
     EnemyController,
 } from '../../../battle/enemy/EnemyController';
 
+import type {
+    CombatSource,
+} from '../../../battle/combat/CombatEventBus';
+
 import {
     CharacterCombatant,
     CharacterCombatModifier,
@@ -20,6 +24,7 @@ interface BurningRuntime {
     remaining: number;
     tick: number;
     dps: number;
+    source?: CombatSource;
 }
 
 interface HeroModifierRuntime {
@@ -35,8 +40,8 @@ interface HeroModifierRuntime {
  * - 敌人燃烧 DoT；
  * - 英雄临时攻击/攻速/移速/减伤/治疗增益。
  *
- * 冰冻、嘲讽、拉扯等更复杂敌人控制继续由 SkillEffectResolver
- * 以安全降级方式结算，后续再扩 EnemyController 的状态接口。
+ * 敌人减速 / 眩晕 / 冻结 / 嘲讽 / 猎人印记统一由
+ * Battle 域 EnemyStatusSystem 持有；这里不复制敌人控制状态。
  */
 @ccclass('StatusEffectSystem')
 export class StatusEffectSystem extends Component {
@@ -92,6 +97,7 @@ export class StatusEffectSystem extends Component {
         targets: readonly Node[],
         duration: number,
         dps: number,
+        source?: CombatSource,
     ): void {
         for (const node of targets) {
             const existing =
@@ -111,6 +117,8 @@ export class StatusEffectSystem extends Component {
                         existing.dps,
                         dps,
                     );
+                existing.source =
+                    source ?? existing.source;
                 continue;
             }
 
@@ -119,6 +127,7 @@ export class StatusEffectSystem extends Component {
                 remaining: duration,
                 tick: 0.5,
                 dps,
+                source,
             });
         }
     }
@@ -196,6 +205,12 @@ export class StatusEffectSystem extends Component {
                     ?.takeDamageToEnemy(
                         effect.node,
                         effect.dps * 0.5,
+                        effect.source
+                            ? {
+                                ...effect.source,
+                                kind: 'hero-dot',
+                            }
+                            : undefined,
                     );
             }
 

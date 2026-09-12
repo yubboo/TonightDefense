@@ -39,6 +39,10 @@ import {
     BossSkillDefinition,
 } from './BossCatalog';
 
+import {
+    EnemyStatusSystem,
+} from '../status/EnemyStatusSystem';
+
 interface BossCastRuntime {
     skill: BossSkillDefinition;
     remaining: number;
@@ -67,6 +71,9 @@ export class BossRuntimeController {
     private readonly baseDamage:
         number;
 
+    private readonly enemyId:
+        number;
+
     private visualNode:
         Node | null = null;
 
@@ -89,6 +96,7 @@ export class BossRuntimeController {
         canvas: Node,
         definition: BossDefinition,
         baseDamage: number,
+        enemyId: number,
     ) {
         this.bossNode =
             bossNode;
@@ -97,6 +105,8 @@ export class BossRuntimeController {
             definition;
         this.baseDamage =
             baseDamage;
+        this.enemyId =
+            enemyId;
 
         this.createVisual();
         this.createSpawnBurst();
@@ -351,7 +361,11 @@ export class BossRuntimeController {
                 Math.round(
                     this.baseDamage *
                     cast.skill
-                        .damageMultiplier,
+                        .damageMultiplier *
+                    EnemyStatusSystem
+                        .getOutgoingDamageMultiplier(
+                            this.enemyId,
+                        ),
                 ),
             );
 
@@ -368,6 +382,11 @@ export class BossRuntimeController {
                     centerY,
                     cast.skill.radius,
                     damage,
+                    {
+                        kind: 'boss-skill',
+                        skillId: cast.skill.id,
+                        enemyId: this.enemyId,
+                    },
                 );
         }
 

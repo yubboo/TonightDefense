@@ -6,11 +6,13 @@ Cocos Creator 3.8.8 微信小游戏割草守城项目。
 
 开始较大修改前依次阅读：`AGENTS.md` → `docs/PROJECT-STATUS.md` → `docs/PROJECT-ARCHITECTURE.md` → `docs/development/PROJECT-RULES.md` → `docs/DEVELOPMENT-PLAN.md`。当前版本记录见 `PROJECT.md`。
 
-## v0.6.1 目录重点
+## v0.6.2 目录重点
 
 - `assets/scripts/systems/hero/`：英雄大系统，统一人物、职业、技能、局内成长和英雄装备。
 - `assets/scripts/systems/storage/`：普通背包/物品/仓库，不保存英雄培养状态。
 - `assets/scripts/systems/battle/`：敌人、Boss、防线、战斗目标、战场表现。
+  - `battle/combat/CombatEventBus.ts`：战斗事实事件桥。
+  - `battle/enemy/status/EnemyStatusSystem.ts`：敌人控制/标记唯一状态源。
 - `assets/scripts/systems/level/`：Stage、Wave、Map、关卡推进。
 - `assets/scripts/systems/feature/`：暂停、设置、体力、教程、大厅等独立功能。
 - `docs/architecture/project-modules.json`：当前机器可读模块骨架。

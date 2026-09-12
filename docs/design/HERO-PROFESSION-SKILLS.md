@@ -14,9 +14,9 @@
 - 主动技能：沿用并扩展 `ProfessionSkillCatalog` + `HeroSkillRuntime`。
 - 三选一成长：沿用并扩展 `HeroSkillUpgradeService` + `ProfessionSkillRunState`。
 - 不创建第二套 SkillManager、UpgradeManager、HeroDatabase 或重复配置源。人物/职业/技能分别以 CharacterCatalog、ProfessionCatalog、ProfessionSkillCatalog 为唯一数据来源。
-- 本文件既是设计规范，也是 v0.6.1 以后新增职业技能时的验收模板；运行时实现必须映射到现有 HeroSystem。
+- 本文件既是设计规范，也是 v0.6.2 以后新增职业技能时的验收模板；运行时实现必须映射到现有 HeroSystem。
 
-## v0.6.1 运行时映射
+## v0.6.2 运行时映射
 - 定义：`assets/scripts/systems/hero/skill/data/ProfessionSkillCatalog.ts`
 - 类型：`ProfessionSkillTypes.ts`
 - 单局等级：`runtime/ProfessionSkillRunState.ts`
@@ -25,6 +25,8 @@
 - 目标：`targeting/SkillTargeting.ts`
 - 效果：`effect/SkillEffectResolver.ts`
 - 持续状态：`effect/StatusEffectSystem.ts`
+- 战斗事件：`assets/scripts/systems/battle/combat/CombatEventBus.ts`
+- 敌人状态：`assets/scripts/systems/battle/enemy/status/EnemyStatusSystem.ts`
 
 ## 职业技能规则
 每个职业固定 5 个技能：
