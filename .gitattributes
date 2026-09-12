@@ -21,6 +21,11 @@
 *.webp binary
 *.mp3 binary
 *.wav binary
+*.zip binary
+*.7z binary
+*.rar binary
+*.psd binary
+*.psb binary
 *.ttf binary
 *.otf binary
 *.bin binary

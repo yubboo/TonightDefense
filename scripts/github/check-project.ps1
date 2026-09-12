@@ -247,9 +247,11 @@ if ($gitAvailable -and (Test-Path -LiteralPath $gitDir -PathType Container)) {
     })
 }
 
-$forbiddenRoot = '^(?:library|temp|build|native|local|profiles|output|design-reference)/'
+$forbiddenRoot = '^(?:library|temp|build|native|local|profiles|output)/'
 $forbiddenNested = '(^|/)(?:node_modules|\.pnpm-store)/'
 $forbiddenExt = '\.(?:exe|dll|pdb|zip|7z|rar|psd|psb|dmp|stackdump|tmp|bak|key|priv|seed|pem|p12|pfx|jks|keystore)$'
+$sharedDesignRoot = '^design-reference/'
+$sharedDesignSourceExt = '\.(?:zip|7z|rar|psd|psb)$'
 $forbiddenNames = '(^|/)(?:project\.private\.config\.json|private\.config\.json|secrets\.json|credentials\.json)$'
 $secretPatterns = @(
     '(?<![A-Za-z0-9])sk-(?:proj-|ant-)?[A-Za-z0-9_-]{20,}',
@@ -265,7 +267,8 @@ foreach ($file in $filesToScan) {
     $lower = $rel.ToLowerInvariant()
     if ($lower -match $forbiddenRoot) { Add-Failure $failures ('禁止进入 Git 的本机/生成/大设计目录：' + $rel); continue }
     if ($lower -match $forbiddenNested) { Add-Failure $failures ('依赖目录禁止提交：' + $rel); continue }
-    if ($lower -match $forbiddenExt) { Add-Failure $failures ('构建/归档/设计源/密钥文件禁止普通 Git 提交：' + $rel); continue }
+    $isSharedDesignSource = ($lower -match $sharedDesignRoot -and $lower -match $sharedDesignSourceExt)
+    if ($lower -match $forbiddenExt -and -not $isSharedDesignSource) { Add-Failure $failures ('构建/归档/设计源/密钥文件禁止普通 Git 提交：' + $rel); continue }
     if ($lower -match $forbiddenNames -or $lower -match '(^|/)\.env($|\.)') { Add-Failure $failures ('本机私密配置禁止提交：' + $rel); continue }
 
     try {

@@ -1,0 +1,52 @@
+{
+  "version": "2.0.0",
+  "policy": "reference packs stay outside assets until formal runtime assets are produced",
+  "packs": [
+    {
+      "id": "eight-modules",
+      "name": "今晚守城_八大模块完整拆分包",
+      "status": "reference_only",
+      "owns": [
+        "characters",
+        "enemies",
+        "npcs",
+        "buildings",
+        "scenes",
+        "effects",
+        "ui",
+        "items"
+      ]
+    },
+    {
+      "id": "asset-spec",
+      "name": "今晚守城_素材规范拆分包",
+      "status": "reference_only",
+      "owns": [
+        "resource_structure",
+        "naming",
+        "export_workflow"
+      ]
+    },
+    {
+      "id": "ui-pack",
+      "name": "今晚守城_UI素材拆分包",
+      "status": "reference_only",
+      "owns": [
+        "ui_reference",
+        "item_icon_reference"
+      ]
+    },
+    {
+      "id": "potion-witch",
+      "name": "魔药巫女_精英怪拆分包",
+      "status": "reference_only",
+      "targetResourceRoot": "assets/resources/enemies/elites/potion_witch"
+    },
+    {
+      "id": "flame-dragon",
+      "name": "赤金炎龙_Boss拆分包",
+      "status": "reference_only",
+      "targetResourceRoot": "assets/resources/enemies/bosses/flame_dragon"
+    }
+  ]
+}

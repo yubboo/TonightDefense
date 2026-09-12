@@ -1,6 +1,6 @@
 # TonightDefense GitHub Safety Baseline
-# 原则：Git 只保存可复现的项目源码、运行时资源、项目设置与开发文档。
-# Cocos 缓存、构建产物、本机编辑器状态、私密配置和大体积设计源文件不进入普通 Git 历史。
+# 原则：Git 保存可复现的项目源码、运行时资源、共享设计素材、项目设置与开发文档。
+# Cocos 缓存、构建产物、本机编辑器状态和私密配置不进入 Git 历史。
 
 # Cocos Creator generated/cache directories
 /library/
@@ -15,9 +15,8 @@
 # Local authoring/output workspace
 /output/
 
-# Heavy design source/reference packages are kept outside normal Git history.
-# If these need version control later, use Git LFS deliberately.
-/design-reference/
+# design-reference/ is the canonical shared art/design library. It is tracked so
+# GitHub and browser-based collaborators can inspect the approved visual source.
 
 # Extension dependencies are reproducible from package-lock.json
 /extensions/**/node_modules/
@@ -75,6 +74,13 @@ private.config.json
 *.rar
 *.psd
 *.psb
+
+# Editable/archive sources are allowed only inside the canonical design library.
+!/design-reference/**/*.zip
+!/design-reference/**/*.7z
+!/design-reference/**/*.rar
+!/design-reference/**/*.psd
+!/design-reference/**/*.psb
 
 # Python cache (authoring scripts, if any)
 __pycache__/

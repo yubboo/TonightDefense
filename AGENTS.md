@@ -17,7 +17,7 @@
 
 每次至少确认：`main` 最新 commit、变更范围、对应 Actions 结果。不能用旧 ZIP 工作目录覆盖 GitHub 新基线。GitHub 静态 Gate 不能冒充 Cocos 编辑器/微信真机运行验证。
 
-GitHub 提交边界统一遵循 `docs/development/PROJECT-RULES.md` 与根目录 `.gitignore`；`library/temp/build/profiles/node_modules/design-reference` 等本机/生成/大设计目录不得进入普通 Git 历史。
+GitHub 提交边界统一遵循 `docs/development/PROJECT-RULES.md` 与根目录 `.gitignore`；`library/temp/build/profiles/node_modules/output` 等本机/生成目录不得进入 Git 历史。`design-reference/` 是 GitHub/网页端 AI/跨机器共用的权威设计素材库，其中的参考图、拆图、清单、PSD 和交付归档必须进入 Git；不得因其不参与 Cocos 运行时就将其排除。
 
 > 本文件是 TonightDefense 项目的 AI / Agent / 自动化开发规范。
 > 任何修改代码、修复 Bug、重构、资源迁移或打包前，必须先阅读并遵守本文件。
@@ -101,7 +101,7 @@ GitHub 提交边界统一遵循 `docs/development/PROJECT-RULES.md` 与根目录
 - 最终回复必须提供可点击下载链接，禁止只写 `/mnt/data/...` 文件系统路径。
 - patch 包只包含本次真正修改的文件，保持项目根目录相对路径，方便直接覆盖。
 - patch ZIP 根目录直接放 `assets/`、`scripts/`、`AGENTS.md` 等需要覆盖的项目项，不额外套版本目录。
-- `TonightDefense-vX.Y.Z.zip` 完整源码包按 GitHub 可复现源码边界制作：包含游戏运行所需源码、场景、资源和 `.meta`，排除 `library/temp/build/native/profiles/node_modules` 等生成或本机状态。
+- `TonightDefense-vX.Y.Z.zip` 完整源码包按 GitHub 可复现源码边界制作：包含游戏运行所需源码、场景、资源、`.meta` 与 `design-reference/` 共享设计素材，排除 `library/temp/build/native/profiles/node_modules/output` 等生成或本机状态。
 - full 包用于完整备份与回滚，可保留当前本机生成目录；它不能替代主版本源码包。
 - 未修改文件不得为了“保险”重复覆盖。
 

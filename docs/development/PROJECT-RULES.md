@@ -19,6 +19,7 @@
 - `cloudfunctions/`；
 - `extensions/` 的源码、`dist`、package.json / lockfile（不含 node_modules）；
 - `spine_source/` 当前小体积原创拆件；
+- `design-reference/`：权威设计参考图、拆图、素材清单、PSD 源文件与交付 ZIP，供 GitHub/网页端 AI/跨机器协作查看；
 - `.github/`、`scripts/`、`docs/`；
 - 根目录 `AGENTS.md`、`PROJECT.md`、`package.json`、`tsconfig.json`、项目 manifest、GitHub BAT/PS1。
 
@@ -28,11 +29,10 @@
 - `profiles/`：本机编辑器/构建状态，当前还包含微信 AppID 与本地构建记录；
 - `extensions/**/node_modules/`：可由 lockfile 恢复；
 - `output/`：本机美术/生成工作区；
-- `design-reference/`：PSD/ZIP 等大体积设计源，不参与运行时；如以后确实要版本化，单独启用 Git LFS 后再讨论；
 - ZIP/7z/RAR、PSD/PSB、EXE/DLL/PDB、日志、dump、缓存；
 - `.env`、私钥、证书、Token、AppSecret、账号/凭据文件。
 
-注意：`assets/resources` 下的 PNG/MP3 是游戏运行所需资源，必须推送；不要因为“二进制”就一刀切忽略。
+注意：`assets/resources` 下的 PNG/MP3 是游戏运行所需资源，必须推送；`design-reference/` 是公开协作所需的权威设计素材，也必须推送。PSD/ZIP 只允许在 `design-reference/` 内跟踪，其它位置仍默认禁止。
 
 ## 4. Cocos Meta 是源码
 

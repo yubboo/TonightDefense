@@ -13,13 +13,14 @@ TonightDefense/
 ├─ settings/             # Cocos 项目级设置（进 Git）
 ├─ spine_source/         # 小体积角色源拆件（可进 Git）
 ├─ scripts/github/       # GitHub Safety Gate
+├─ design-reference/    # GitHub/网页端 AI/跨机器共享的权威设计素材库
 ├─ AGENTS.md             # AI/人工最高开发规范
 ├─ PROJECT.md            # 项目说明与版本记录
 ├─ TonightDefense-GitHub.bat
 └─ push-tonight-defense.ps1
 ```
 
-不属于源码基线：`library/`、`temp/`、`build/`、`native/`、`profiles/`、`output/`、`design-reference/`、任何 `node_modules/`。
+不属于共享基线：`library/`、`temp/`、`build/`、`native/`、`profiles/`、`output/`、任何 `node_modules/`。`design-reference/` 虽不参与 Cocos 运行时，但属于共享基线，用于固定视觉方向并防止协作者用临时生成素材覆盖正式素材。
 
 ## 2. Scene 与 UI
 

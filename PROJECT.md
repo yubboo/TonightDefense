@@ -3,7 +3,7 @@
 ## 项目信息
 
 - 项目名：TonightDefense
-- 当前整理包版本：v0.5.1
+- 当前整理包版本：v0.5.2
 - Cocos Creator：3.8.8
 - 目标平台：微信小游戏
 
@@ -18,6 +18,14 @@ AI / Agent / 自动化修改项目时，统一遵循项目根目录 `AGENTS.md`�
 3. 在 Cocos 中先预览测试，再正常构建微信小游戏。
 
 源码包不包含 `library`、`temp`、`build`、`native` 等自动生成目录，以减少缓存污染和 Windows 路径过长问题。
+源码包包含 `design-reference/` 共享设计素材库，便于 GitHub 与网页端 AI 按正式设计继续开发。
+
+## v0.5.2 GitHub 共享设计素材基线
+
+- 修复 `.gitignore` 对 `design-reference/` 整体排除的问题，将设计 PNG、拆图、素材清单、PSD 源文件和交付 ZIP 纳入 GitHub 共享基线。同时归档赤金炎龙的原始 MP3/WAV 候选与两份 CC0 采集资料包。
+- `assets/resources/` 的运行时资源仍全部跟踪；`library/temp/build/profiles/node_modules/output` 等缓存、本机状态和临时输出仍排除。
+- Safety Gate 改为仅对 `design-reference/` 放行 PSD/PSB/ZIP/7z/RAR，其它路径的大设计源和归档仍会被拦截，95 MB 单文件上限与秘密扫描保持不变。
+- 网页端 AI 应优先读取 `design-reference/` 和 `assets/resources/`，禁止在未审核时重新生成丑化或覆盖现有正式素材。
 
 ## v0.5.1 王城前境战斗地图与五人 HUD
 
