@@ -274,6 +274,12 @@ extends Component {
     update(
         dt: number,
     ): void {
+        /**
+         * HUD 布局是屏幕空间职责；即使当前波次暂停/结算中，
+         * Creator 设备预览切换或窗口尺寸变化也要立即重新锚定。
+         */
+        this.hud?.refreshLayout();
+
         if (
             this.battleStarted &&
             DefenseObjectiveService.isGameOver

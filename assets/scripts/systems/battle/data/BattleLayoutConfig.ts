@@ -108,15 +108,27 @@ export const BATTLE_LAYOUT = {
             -28,
         ),
 
+
+    /** 主角阵亡后由防御塔复活到固定主角阵位。 */
+    mainHeroReviveAnchor:
+        new Vec2(
+            0,
+            -28,
+        ),
+
     /**
-     * 玩家控制主角活动范围。
-     * 主角可以进入上半区主动堵泉水；这是与 AI 英雄活动规则的主要区别。
+     * 所有英雄共用的物理战场活动边界。
+     * v0.6.6 起 AI 英雄不再拥有独立寻怪/交战区域；主角与伙伴都可以进入上半区。
      */
     heroMoveBounds: {
-        minX: -380,
-        maxX: 380,
-        minY: -223,
-        maxY: 570,
+        /**
+         * v0.6.6：玩家主角与 AI 英雄共用同一套物理战场边界。
+         * 这只是地图不可穿越边缘，不再作为 AI 寻怪/交战区域限制。
+         */
+        minX: -390,
+        maxX: 390,
+        minY: -452,
+        maxY: 690,
     },
 
     /**
@@ -162,34 +174,23 @@ export const BATTLE_LAYOUT = {
     ],
 
     /**
-     * v0.4.12：AI 英雄只在“主战场 + 防守区”活动。
-     * 不再进入上方怪物泉水区，避免一名英雄先冲泉水单挑，
-     * 后排跟不上后形成连续送死。
-     *
-     * 主角仍然使用 heroMoveBounds，可以由玩家自行选择是否上前堵泉水。
+     * v0.6.6：AI 英雄不再有独立活动/寻怪区域。
+     * 伙伴和主角共用 heroMoveBounds 作为纯物理地图边界。
      */
-    aiHeroMoveBounds: {
-        minX: -352,
-        maxX: 352,
-        minY: -452,
-        maxY: 181,
-    },
 
     /** 无怪时只在各自固定阵位附近做小范围巡逻。 */
     companionGuardPatrolRadiusX: 51,
     companionGuardPatrolRadiusY: 61,
 
-    companionPatrolSpeed: 62,
-    companionChaseSpeedMultiplier: 1.08,
 
     companionPatrolPauseMin: 0.55,
     companionPatrolPauseMax: 1.45,
 
     /**
-     * 单个 AI 英雄复活全过程约 4 秒，总计消耗 200 点雕像生命。
+     * 单个英雄（主角或 AI）复活全过程约 4 秒，总计消耗 200 点雕像生命。
      * 消耗与生命恢复按时间连续发生。
      */
-    companionRevive: {
+    heroRevive: {
         duration: 4,
         totalTowerHpCost: 200,
         initialHpRatio: 0.04,

@@ -213,7 +213,7 @@ export class HeroSkillRuntime extends Component {
             hero.combatant &&
             hero.selectedCharacter &&
             hero.selectedProfession &&
-            hero.combatant.isAlive
+            hero.isCombatReady
         ) {
             result.push({
                 actorId: 'main-hero',

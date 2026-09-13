@@ -269,9 +269,7 @@ export class BattleSceneSetup extends Component {
             halfHeight,
         );
 
-        this.drawEnemyFountains(
-            root,
-        );
+        /** 怪物泉水只保留为逻辑出生点，不在正式战斗画面绘制调试圆环。 */
 
         BattleArt.attach(
             root,
@@ -369,100 +367,6 @@ export class BattleSceneSetup extends Component {
                 .mainZoneMinY,
         );
         g.stroke();
-    }
-
-    private drawEnemyFountains(
-        parent: Node,
-    ): void {
-        const fountains =
-            BATTLE_LAYOUT
-                .enemySpawn
-                .fountains;
-
-        for (
-            let i = 0;
-            i < fountains.length;
-            i += 1
-        ) {
-            const point =
-                fountains[i];
-
-            const node =
-                new Node(
-                    `EnemyFountain_${i}`,
-                );
-
-            node.layer =
-                Layers.Enum.UI_2D;
-            parent.addChild(node);
-            node.setPosition(
-                point.x,
-                point.y,
-                0,
-            );
-
-            const g =
-                node.addComponent(
-                    Graphics,
-                );
-
-            g.fillColor =
-                new Color(
-                    77,
-                    87,
-                    102,
-                    120,
-                );
-            g.circle(
-                0,
-                0,
-                54,
-            );
-            g.fill();
-
-            g.fillColor =
-                new Color(
-                    101,
-                    92,
-                    171,
-                    205,
-                );
-            g.circle(
-                0,
-                0,
-                39,
-            );
-            g.fill();
-
-            g.fillColor =
-                this.toColor(
-                    this.mapDefinition
-                        .palette
-                        .accent,
-                    205,
-                );
-            g.circle(
-                0,
-                3,
-                24,
-            );
-            g.fill();
-
-            g.strokeColor =
-                new Color(
-                    225,
-                    220,
-                    173,
-                    220,
-                );
-            g.lineWidth = 4;
-            g.circle(
-                0,
-                0,
-                48,
-            );
-            g.stroke();
-        }
     }
 
     /** 中央道路把泉水、交战区与王城防线连成一条清晰战斗轴。 */

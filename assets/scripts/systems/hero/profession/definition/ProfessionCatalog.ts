@@ -4,6 +4,7 @@
  * @module definition
  */
 import {
+    HERO_BASE_MOVE_SPEED,
     ProfessionDefinition,
     ProfessionId,
 } from './ProfessionTypes';
@@ -20,7 +21,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 215,
                 attackPower: 15,
                 defense: 3,
-                moveSpeed: 150,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 385,
@@ -50,7 +51,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 275,
                 attackPower: 17,
                 defense: 5,
-                moveSpeed: 165,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 72,
@@ -80,7 +81,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 235,
                 attackPower: 13,
                 defense: 4,
-                moveSpeed: 148,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 365,
@@ -110,7 +111,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 360,
                 attackPower: 14,
                 defense: 8,
-                moveSpeed: 138,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 68,
@@ -140,7 +141,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 225,
                 attackPower: 12,
                 defense: 3,
-                moveSpeed: 158,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 390,
@@ -170,7 +171,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 390,
                 attackPower: 11,
                 defense: 10,
-                moveSpeed: 130,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 65,
@@ -200,7 +201,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 250,
                 attackPower: 10,
                 defense: 5,
-                moveSpeed: 140,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 340,
@@ -230,7 +231,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 320,
                 attackPower: 16,
                 defense: 6,
-                moveSpeed: 145,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 70,
@@ -260,7 +261,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 220,
                 attackPower: 14,
                 defense: 3,
-                moveSpeed: 146,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 375,
@@ -290,7 +291,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 345,
                 attackPower: 13,
                 defense: 6,
-                moveSpeed: 134,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 68,
@@ -320,7 +321,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 220,
                 attackPower: 14,
                 defense: 3,
-                moveSpeed: 146,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 380,
@@ -351,7 +352,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 255,
                 attackPower: 9,
                 defense: 5,
-                moveSpeed: 136,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 350,
@@ -381,7 +382,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 350,
                 attackPower: 14,
                 defense: 8,
-                moveSpeed: 132,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 68,
@@ -411,7 +412,7 @@ export const PROFESSION_CATALOG:
                 maxHp: 380,
                 attackPower: 18,
                 defense: 8,
-                moveSpeed: 136,
+                moveSpeed: HERO_BASE_MOVE_SPEED,
             },
 
             attackRange: 74,

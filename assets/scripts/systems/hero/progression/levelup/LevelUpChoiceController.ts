@@ -54,9 +54,12 @@ import {
 } from '../../skill/effect/StatusEffectSystem';
 
 import {
-    HeroSkillUpgradeService,
     ProfessionSkillRollSource,
 } from '../../skill/upgrade/HeroSkillUpgradeService';
+
+import {
+    HeroRunUpgradeService,
+} from './HeroRunUpgradeService';
 
 import {
     WaveRewardKind,
@@ -300,11 +303,11 @@ extends Component {
     }
 
     /**
-     * SkillChoicePanel 只负责技能卡 UI。
+     * SkillChoicePanel 只负责本局成长三选一卡片 UI。
      *
      * LevelUpChoiceController 负责：
-     * - 生成三条候选强化
-     * - 应用技能
+     * - 生成技能 / 全队属性混合候选
+     * - 通过 HeroRunUpgradeService 应用唯一成长状态
      * - 结束奖励流程
      */
     private async openSkillChoice():
@@ -313,7 +316,7 @@ extends Component {
             this.getSkillRollSources();
 
         const options =
-            HeroSkillUpgradeService
+            HeroRunUpgradeService
                 .rollThreeOptions(
                     sources,
                 );
@@ -351,7 +354,7 @@ extends Component {
                         selected = true;
 
                         const success =
-                            HeroSkillUpgradeService
+                            HeroRunUpgradeService
                                 .apply(
                                     option,
                                 );
@@ -360,15 +363,25 @@ extends Component {
                             selected = false;
 
                             console.warn(
-                                `[今晚守城] 技能强化应用失败：${option.professionName} / ${option.skill.name}`,
+                                '[今晚守城] 本局成长三选一应用失败',
+                                option,
                             );
 
                             return;
                         }
 
-                        console.log(
-                            `[今晚守城] 小关${this.currentWave} 强化：${option.professionName} -> ${option.skill.name} Lv.${option.nextLevel}`,
-                        );
+                        if (option.kind === 'skill') {
+                            const skill =
+                                option.skillOption;
+
+                            console.log(
+                                `[今晚守城] 小关${this.currentWave} 强化：${skill.professionName} -> ${skill.skill.name} Lv.${skill.nextLevel}`,
+                            );
+                        } else {
+                            console.log(
+                                `[今晚守城] 小关${this.currentWave} 全队属性：${option.stat.name} Lv.${option.nextLevel}`,
+                            );
+                        }
 
                         this.finishReward();
                     },

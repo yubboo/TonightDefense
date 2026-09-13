@@ -12,6 +12,12 @@ export type ProfessionAttackMode =
     | 'magic'
     | 'support';
 
+/**
+ * v0.6.6：所有英雄的基础移动速度统一。
+ * 职业不再暗藏快慢差异；本局移速成长只能通过三选一/技能效果进入统一 Modifier 链。
+ */
+export const HERO_BASE_MOVE_SPEED = 138;
+
 export type ProfessionId =
     | 'flame_caster'
     | 'sword_cultivator'

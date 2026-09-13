@@ -3,7 +3,7 @@
 ## 项目信息
 
 - 项目名：TonightDefense
-- 当前整理包版本：v0.6.3
+- 当前整理包版本：v0.6.6
 - Cocos Creator：3.8.8
 - 目标平台：微信小游戏
 
@@ -19,6 +19,36 @@ AI / Agent / 自动化修改项目时，统一遵循项目根目录 `AGENTS.md`�
 
 源码包不包含 `library`、`temp`、`build`、`native` 等自动生成目录，以减少缓存污染和 Windows 路径过长问题。
 源码包包含 `design-reference/` 共享设计素材库，便于 GitHub 与网页端 AI 按正式设计继续开发。
+
+## v0.6.6 英雄复活 / AI 自由索敌 / 三选一属性成长 / 敌人红血条
+
+- 延续用户已在 Cocos Creator 3.8.8 预览确认可运行的 v0.6.5 本地基线；本轮不重做 BattleWorld/HUD 适配，只修英雄复活、AI 移动/索敌、局内成长入口和敌人血条表现。
+- `DefenseObjectiveService -> CoreHealth` 的复活通道由“伙伴专用”收口为“所有英雄共用”：主角阵亡后同样由防御塔持续消耗生命复活，复活中不参与受击、普攻或自动技能，完成后满血重新加入战斗。
+- `MainHeroController` 是玩家移动唯一 Runtime；历史 `PlayerController` 停止读取摇杆和直接移动，避免第二套 300 移速逻辑重新介入。
+- 所有职业开局基础移动速度统一读取 `HERO_BASE_MOVE_SPEED = 138`；装备不再暗中提供移动速度百分比。战斗中的永久攻击/防御/最大生命/移动速度/闪避成长统一通过三选一获得。
+- 新增 `HeroRunStatState` 与 `HeroRunUpgradeService`：技能三选一与全队属性三选一使用同一候选入口；双方都有候选时三张卡至少各包含 1 张技能、1 张属性。当前属性卡为强攻、坚甲、体魄、疾行、灵巧，均可升至 Lv.5。
+- `CompanionBattleController` 取消 AI 独立交战区与区域索敌，改为全战场寻找最近存活怪物；主角/伙伴只受地图物理边界限制。伙伴追击和回防都使用自身真实 `CharacterCombatant.moveSpeed`，不再额外乘追击倍率、巡逻速度上限或瞬间归位。
+- 怪物消失后伙伴先按自身实际移速走回固定防守阵位，进入阵位附近后才进行小范围巡逻；低帧率移动步长也做上限，降低视觉上的“瞬移”。
+- 普通/精英/Boss 的世界血条填充统一为红色；敌人类型继续由模型、体型和 Boss 顶部 HUD 区分。
+- `BattlePartyHUD` 主角卡新增“复活中”状态，和伙伴复活状态一致，不把正在传输复活能量的主角显示成普通存活。
+
+## v0.6.5 正式战场原型残留清理
+
+- 延续 v0.6.4 的 SafeArea HUD 与 v0.6.3 的 9:16 BattleWorld 适配；本轮不改技能、波次、Boss、敌人生命或防线业务状态，只清理正式战斗画面中的旧原型表现。
+- `BattleSceneSetup` 不再绘制 5 个蓝紫色 `EnemyFountain_*` Graphics 圆环；泉水坐标仍保留在 `BattleLayoutConfig.enemySpawn.fountains` 作为刷怪逻辑唯一入口。
+- `CoreHealth` 删除长期覆盖上半屏的 642×96 `DefenseStatusUI` 大白板；雕像/城墙生命改为 `BattleWorldRoot` 内的紧凑世界血条，跟随防线一起进入/离开镜头。
+- 公主状态改为世界内的小型 `公主 ♥` 指示，不再占用屏幕 HUD 层；防线生命、受击、复活消耗和 GameOver 仍由原 `CoreHealth -> DefenseObjectiveService` 链唯一结算。
+- Creator 热重载时会同时清理 Canvas 和 BattleWorldRoot 中的历史 `DefenseStatusUI/CoreHpUI` 节点，避免覆盖新版本后旧大面板继续残留。
+
+## v0.6.4 Battle HUD SafeArea / 长屏锚点修复
+
+- 延续用户已在 Cocos Creator 3.8.8 验证过的 v0.6.3 战场适配；本轮不改 BattleWorld、英雄技能、波次、Boss、暂停、音频或存档事实链，只修屏幕空间 HUD。
+- 新增 `ui/layout/BattleHudLayout.ts` 作为战斗屏幕布局唯一入口：继续以 720 × 1280 为设计基准，运行时读取 `view.getVisibleSize()/getVisibleOrigin()` 与 `sys.getSafeAreaRect(true)`，把设计稿边缘距离换算到当前手机安全区。
+- `ChapterWaveHUD` 从固定 `y=568` 改为顶部安全区锚定；Creator 切换设备预览或窗口尺寸变化时会重新计算，不再停留在旧 1280 高度。
+- `BattlePartyHUD` 整体从固定设计中心改为底部安全区锚定；五人卡栏和右侧四个自动技能状态位会一起下移到真实长屏底部，不再悬在城墙中间。
+- `VirtualJoystick` 保留设计稿左/下边距，改为左下安全区锚定；触摸坐标仍读取实际节点位置，不改变 MoveInputState 或英雄移动业务逻辑。
+- `BossHealthHUD` 与顶部 HUD 使用同一顶部锚点规则，避免 Boss 血条在长屏上和关卡 HUD 分家。
+- 设计分辨率继续保持 720 × 1280，不针对某一台 iPhone 写死物理像素；背景仍由 v0.6.3 BattleWorld cover 负责填满全屏，交互 HUD 只在安全区内定位。
 
 ## v0.6.3 战斗背景 / 手机视口统一适配
 

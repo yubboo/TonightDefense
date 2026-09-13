@@ -3,8 +3,8 @@
  * @owner ui
  * @module panels/skill
  *
- * 职业技能三选一面板。
- * 这里只展示 HeroSkillUpgradeService 生成的候选，不维护技能等级。
+ * 本局成长三选一面板。
+ * 同时展示职业技能与全队属性候选；UI 不维护任何成长状态。
  */
 import {
     BlockInputEvents,
@@ -19,8 +19,8 @@ import {
 } from 'cc';
 
 import {
-    HeroSkillChoiceOption,
-} from '../../../systems/hero/skill/upgrade/HeroSkillUpgradeService';
+    HeroRunUpgradeOption,
+} from '../../../systems/hero/progression/levelup/HeroRunUpgradeService';
 
 import {
     SkillChoiceCard,
@@ -30,10 +30,10 @@ export class SkillChoicePanel {
     static async create(
         canvas: Node,
         options:
-            readonly HeroSkillChoiceOption[],
+            readonly HeroRunUpgradeOption[],
         onSelect:
             (
-                option: HeroSkillChoiceOption,
+                option: HeroRunUpgradeOption,
             ) => void,
     ): Promise<Node> {
         const overlay =

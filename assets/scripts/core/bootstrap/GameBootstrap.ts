@@ -66,6 +66,10 @@ import {
 } from '../../systems/hero/skill/runtime/ProfessionSkillRunState';
 
 import {
+    HeroRunStatState,
+} from '../../systems/hero/progression/levelup/HeroRunStatState';
+
+import {
     StatusEffectSystem,
 } from '../../systems/hero/skill/effect/StatusEffectSystem';
 
@@ -111,8 +115,9 @@ extends Component {
          */
         CombatEventBus.clear();
 
-        /** 每次进入战斗都开启新的职业技能成长状态。 */
+        /** 每次进入战斗都开启新的职业技能 / 全队属性成长状态。 */
         ProfessionSkillRunState.beginNewRun();
+        HeroRunStatState.beginNewRun();
 
         GamePerformanceSettings
             .ensureApplied();

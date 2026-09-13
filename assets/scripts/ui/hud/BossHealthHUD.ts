@@ -14,6 +14,10 @@ import {
     UITransform,
 } from 'cc';
 
+import {
+    BattleHudLayout,
+} from '../layout/BattleHudLayout';
+
 export class BossHealthHUD {
     private readonly root:
         Node;
@@ -46,7 +50,13 @@ export class BossHealthHUD {
         root.layer =
             Layers.Enum.UI_2D;
         canvas.addChild(root);
-        root.setPosition(0, 452, 0);
+        root.setPosition(
+            0,
+            BattleHudLayout.topAnchoredY(
+                452,
+            ),
+            0,
+        );
         root.addComponent(
             UITransform,
         ).setContentSize(
@@ -236,6 +246,8 @@ export class BossHealthHUD {
         phaseNumber: number,
         phaseName: string,
     ): void {
+        this.refreshLayout();
+
         const ratio =
             Math.max(
                 0,
@@ -258,6 +270,24 @@ export class BossHealthHUD {
 
         this.healthLabel.string =
             `${Math.ceil(hp)} / ${Math.ceil(maxHp)}`;
+    }
+
+
+    refreshLayout(): void {
+        if (!this.root.isValid) {
+            return;
+        }
+
+        const metrics =
+            BattleHudLayout.getMetrics();
+
+        this.root.setPosition(
+            metrics.safeCenterX,
+            BattleHudLayout.topAnchoredY(
+                452,
+            ),
+            0,
+        );
     }
 
     destroy(): void {

@@ -340,7 +340,7 @@
     },
     "_enabled": true,
     "__prefab": null,
-    "moveSpeed": 260,
+    "moveSpeed": 138,
     "maxHp": 260,
     "attackPower": 12,
     "defense": 4,

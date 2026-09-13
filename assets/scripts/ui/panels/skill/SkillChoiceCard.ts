@@ -3,9 +3,9 @@
  * @owner ui
  * @module panels/skill
  *
- * 职业技能强化卡。
- * 卡片展示职业、技能类型、当前/下一等级和本级效果；
- * 技能等级事实来源始终是 ProfessionSkillRunState。
+ * 本局成长三选一卡。
+ * 同一个面板同时展示“职业技能”与“全队属性”候选；
+ * UI 只读取 HeroRunUpgradeOption，不保存成长状态。
  */
 import {
     Color,
@@ -17,8 +17,8 @@ import {
 } from 'cc';
 
 import {
-    HeroSkillChoiceOption,
-} from '../../../systems/hero/skill/upgrade/HeroSkillUpgradeService';
+    HeroRunUpgradeOption,
+} from '../../../systems/hero/progression/levelup/HeroRunUpgradeService';
 
 import {
     getProfessionById,
@@ -30,12 +30,12 @@ import {
 
 export interface SkillChoiceCardOptions {
     parent: Node;
-    option: HeroSkillChoiceOption;
+    option: HeroRunUpgradeOption;
     x: number;
     y: number;
     onSelect:
         (
-            option: HeroSkillChoiceOption,
+            option: HeroRunUpgradeOption,
         ) => void;
 }
 
@@ -51,35 +51,118 @@ export class SkillChoiceCard {
             onSelect,
         } = options;
 
-        const profession =
-            getProfessionById(
-                option.professionId,
-            );
-        const main =
-            new Color(
+        let main:
+            Color;
+        let soft:
+            Color;
+        let dark:
+            Color;
+        let glyph:
+            string;
+        let groupName:
+            string;
+        let kindText:
+            string;
+        let title:
+            string;
+        let levelText:
+            string;
+        let description:
+            string;
+        let actionText:
+            string;
+        let cardId:
+            string;
+
+        if (option.kind === 'skill') {
+            const skillOption =
+                option.skillOption;
+            const profession =
+                getProfessionById(
+                    skillOption.professionId,
+                );
+
+            main = new Color(
                 profession.theme.main[0],
                 profession.theme.main[1],
                 profession.theme.main[2],
                 255,
             );
-        const soft =
-            new Color(
+            soft = new Color(
                 profession.theme.soft[0],
                 profession.theme.soft[1],
                 profession.theme.soft[2],
                 255,
             );
-        const dark =
-            new Color(
+            dark = new Color(
                 profession.theme.dark[0],
                 profession.theme.dark[1],
                 profession.theme.dark[2],
                 255,
             );
+            glyph =
+                profession.name.slice(0, 1);
+            groupName =
+                profession.name;
+            kindText =
+                skillOption.skill.kind ===
+                    'passive'
+                    ? '被动技能'
+                    : '自动战技';
+            title =
+                skillOption.skill.name;
+            levelText =
+                skillOption.isUnlock
+                    ? '解锁 · Lv.1'
+                    : `Lv.${skillOption.currentLevel} → Lv.${skillOption.nextLevel}`;
+            description =
+                skillOption.description;
+            actionText =
+                skillOption.isUnlock
+                    ? '解锁技能'
+                    : '强化技能';
+            cardId =
+                `${skillOption.professionId}_${skillOption.skill.id}`;
+        } else {
+            main = new Color(
+                62,
+                134,
+                191,
+                255,
+            );
+            soft = new Color(
+                220,
+                237,
+                248,
+                255,
+            );
+            dark = new Color(
+                43,
+                82,
+                112,
+                255,
+            );
+            glyph =
+                option.stat.glyph;
+            groupName =
+                '全队成长';
+            kindText =
+                '本局属性';
+            title =
+                option.stat.name;
+            levelText =
+                `Lv.${option.currentLevel} → Lv.${option.nextLevel}`;
+            description =
+                option.description;
+            actionText =
+                '强化属性';
+            cardId =
+                `stat_${option.stat.id}`;
+        }
 
         const card =
             new Node(
-                `SkillCard_${option.professionId}_${option.skill.id}`,
+                `RunUpgradeCard_${cardId}`,
             );
         card.layer =
             Layers.Enum.UI_2D;
@@ -154,7 +237,6 @@ export class SkillChoiceCard {
         );
         g.fill();
 
-        /** 职业徽记：避免技能选择继续依赖某一名英雄头像。 */
         g.fillColor = main;
         g.circle(
             0,
@@ -178,8 +260,8 @@ export class SkillChoiceCard {
 
         this.createLabel(
             card,
-            'ProfessionGlyph',
-            profession.name.slice(0, 1),
+            'UpgradeGlyph',
+            glyph,
             0,
             121,
             31,
@@ -189,8 +271,8 @@ export class SkillChoiceCard {
         );
         this.createLabel(
             card,
-            'ProfessionName',
-            profession.name,
+            'UpgradeGroup',
+            groupName,
             0,
             72,
             17,
@@ -200,10 +282,8 @@ export class SkillChoiceCard {
         );
         this.createLabel(
             card,
-            'SkillKind',
-            option.skill.kind === 'passive'
-                ? '被动技能'
-                : '自动战技',
+            'UpgradeKind',
+            kindText,
             0,
             38,
             14,
@@ -213,8 +293,8 @@ export class SkillChoiceCard {
         );
         this.createLabel(
             card,
-            'SkillName',
-            option.skill.name,
+            'UpgradeName',
+            title,
             0,
             4,
             20,
@@ -228,10 +308,6 @@ export class SkillChoiceCard {
             ),
         );
 
-        const levelText =
-            option.isUnlock
-                ? '解锁 · Lv.1'
-                : `Lv.${option.currentLevel} → Lv.${option.nextLevel}`;
         this.createLabel(
             card,
             'Level',
@@ -247,7 +323,7 @@ export class SkillChoiceCard {
         this.createLabel(
             card,
             'Description',
-            option.description,
+            description,
             0,
             -91,
             13,
@@ -273,9 +349,7 @@ export class SkillChoiceCard {
         this.createLabel(
             card,
             'Action',
-            option.isUnlock
-                ? '解锁技能'
-                : '强化技能',
+            actionText,
             0,
             -160,
             16,

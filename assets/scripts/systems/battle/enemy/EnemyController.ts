@@ -150,18 +150,6 @@ export interface EnemyDamageResult {
     killed: boolean;
 }
 
-/**
- * 敌人查询区域。
- * AI 英雄用它限制自己只选择“实际能够进入攻击距离”的目标，
- * 避免隔着活动边界锁定泉水区怪物后一直顶着边界空跑。
- */
-export interface EnemySearchBounds {
-    minX: number;
-    maxX: number;
-    minY: number;
-    maxY: number;
-}
-
 interface EnemyAttackTarget {
     kind:
         'character' |
@@ -714,29 +702,6 @@ extends Component {
         return this.findNearestEnemyInternal(
             position,
             maxDistance,
-            null,
-        );
-    }
-
-    /**
-     * 在指定区域里找距离最近的存活怪物。
-     *
-     * 由 EnemyController 统一维护敌人查询逻辑，AI 英雄只提供自己的
-     * 可交战区域，不复制 enemies 遍历。
-     */
-    findNearestEnemyInBounds(
-        position:
-            Vec3 | Vec2,
-        bounds:
-            EnemySearchBounds,
-        maxDistance =
-            Number.POSITIVE_INFINITY,
-    ):
-        EnemyTarget | null {
-        return this.findNearestEnemyInternal(
-            position,
-            maxDistance,
-            bounds,
         );
     }
 
@@ -899,8 +864,6 @@ extends Component {
         position:
             Vec3 | Vec2,
         maxDistance: number,
-        bounds:
-            EnemySearchBounds | null,
     ):
         EnemyTarget | null {
         let best:
@@ -924,18 +887,6 @@ extends Component {
 
             const pos =
                 enemy.node.position;
-
-            if (
-                bounds &&
-                (
-                    pos.x < bounds.minX ||
-                    pos.x > bounds.maxX ||
-                    pos.y < bounds.minY ||
-                    pos.y > bounds.maxY
-                )
-            ) {
-                continue;
-            }
 
             const dx =
                 pos.x -
@@ -2308,29 +2259,18 @@ extends Component {
                 Graphics,
             );
 
+        /**
+         * v0.6.6：所有敌方单位血条统一使用红色。
+         * Boss / 精英身份继续由模型、尺寸和顶部 Boss HUD 区分，
+         * 不再让普通怪使用容易和友军混淆的绿色血条。
+         */
         fg.fillColor =
-            rank ===
-                'boss'
-                ? new Color(
-                    217,
-                    93,
-                    105,
-                    255,
-                )
-                : rank ===
-                    'elite'
-                    ? new Color(
-                        225,
-                        181,
-                        68,
-                        255,
-                    )
-                    : new Color(
-                        86,
-                        205,
-                        105,
-                        255,
-                    );
+            new Color(
+                224,
+                62,
+                70,
+                255,
+            );
 
         fg.roundRect(
             0,

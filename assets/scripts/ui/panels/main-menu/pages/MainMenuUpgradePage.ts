@@ -283,7 +283,7 @@ export class MainMenuUpgradePage {
             panel,
             'RuleHint',
             this.active === 'statue'
-                ? '伙伴阵亡后由雕像消耗自身生命复活；雕像损坏后停止全部复活。'
+                ? '主角与伙伴阵亡后都由雕像消耗自身生命复活；雕像损坏后停止全部复活。'
                 : this.active === 'wall'
                     ? '雕像被破坏后怪物攻击城墙；城墙生命归零后破城。'
                     : '公主是最终守护目标；当前战斗规则为 1 点生命。',

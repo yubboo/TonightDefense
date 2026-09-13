@@ -4,7 +4,7 @@
 
 v0.6.1 完成第一次系统域收口：Hero、Storage、Battle、Level、Feature 等职责按业务域归档；根目录只保留真正项目入口/工具。后续新增模块优先进入现有域，不恢复 `systems/character`、`systems/skill`、`systems/inventory` 等平铺旧目录。
 
-## Phase B：英雄大系统（v0.6.2 已完成底层补强）
+## Phase B：英雄大系统（v0.6.6 当前补强）
 
 - Character：人物身份唯一来源。
 - Profession：职业基础属性与攻击模型。
@@ -13,13 +13,17 @@ v0.6.1 完成第一次系统域收口：Hero、Storage、Battle、Level、Featur
 - Equipment：英雄穿戴关系与战斗属性修正。
 - MainMenu Hero Warehouse：人物 / 职业 / 技能 / 培养 / 装备统一入口。
 
-v0.6.2 已增加统一 `CombatEventBus / EnemyStatusSystem`，并正式接通坦克受击叠层/嘲讽、游侠印记、法师冻结/减速与共鸣范围强化。下一步继续补齐 `pull / split-fireball / final-lightning-burst / emergency-shield` 等觉醒标签与正式状态表现。
+v0.6.2 已增加统一 `CombatEventBus / EnemyStatusSystem`。v0.6.6 进一步统一本局成长：`HeroRunUpgradeService` 把职业技能与攻击/防御/生命/移速/闪避全部纳入三选一，`HeroRunStatState` 持有本局全队属性等级。装备只决定开局基线，不得绕过三选一私下提高本局永久移动速度。下一步继续补齐 `pull / split-fireball / final-lightning-burst / emergency-shield` 等觉醒标签与正式状态表现。
 
-## Phase C：战斗核心与空间（v0.6.3 当前重点）
+## Phase C：战斗核心与空间（v0.6.3 已完成世界适配）
 
-v0.6.3 统一正式背景与玩法空间：`battle_ground` 原生 900 × 1600（9:16）直接成为 BattleLayout 逻辑坐标系；`BattleWorldService` 按真实设备可见尺寸做 cover 缩放，长屏只裁左右安全出血。继续保护现有 Hero/AI Hero、招募、复活、防线、波次和 Boss 闭环；AI Hero 只在主战场 + 防守区活动，主角可以主动进入上方危险区。任何空间/技能扩展都不能重新复制 Camera/Enemy/Target/Health 系统。
+v0.6.3 统一正式背景与玩法空间：`battle_ground` 原生 900 × 1600（9:16）直接成为 BattleLayout 逻辑坐标系；`BattleWorldService` 按真实设备可见尺寸做 cover 缩放，长屏只裁左右安全出血。v0.6.6 取消 AI 独立交战区：主角和 AI Hero 共用地图物理边界，AI 可全战场寻找最近怪物；战斗结束后按自身实际移速走回固定阵位，不瞬移归位。主角与伙伴统一通过防御塔复活通道复活。任何空间/技能扩展都不能重新复制 Camera/Enemy/Target/Health 系统。
 
-## Phase D：正式 UI / 美术
+## Phase D：正式 UI / 美术（v0.6.6 持续）
+
+v0.6.4 先完成 Battle 屏幕空间适配：项目仍以 720 × 1280 为设计分辨率，`BattleHudLayout` 统一把顶部/底部/左右设计边距锚到当前设备 SafeArea；顶部关卡 HUD、Boss 血条、底部五人卡/自动技能区与虚拟摇杆不再使用固定 1280 高度定位。
+
+v0.6.5 清理正式战场残留原型：刷怪泉水不再绘制调试圆环，防线生命显示从 Canvas 大白板迁到防线世界位置的紧凑血条；后续继续把剩余 Graphics 兜底逐步替换为正式资源，但不重复业务状态。
 
 - 战斗 HUD 继续读取 Runtime，不保存业务状态。
 - 主角右侧 4 技能位改为“自动技能状态”：锁定 / 等级 / 冷却。

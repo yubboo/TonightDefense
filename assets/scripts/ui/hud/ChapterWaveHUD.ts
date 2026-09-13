@@ -35,6 +35,10 @@ import {
     BattleArt,
 } from '../resources/BattleArt';
 
+import {
+    BattleHudLayout,
+} from '../layout/BattleHudLayout';
+
 interface HudLabelStyle {
     fontSize: number;
     lineHeight: number;
@@ -82,7 +86,9 @@ export class ChapterWaveHUD {
 
         root.setPosition(
             0,
-            568,
+            BattleHudLayout.topAnchoredY(
+                568,
+            ),
             0,
         );
 
@@ -486,6 +492,8 @@ export class ChapterWaveHUD {
         total: number,
         _phaseText = '',
     ): void {
+        this.refreshLayout();
+
         this.titleLabel.string =
             `第${chapterNumber}关 · 小关 ${waveNumber}/40`;
 
@@ -516,6 +524,24 @@ export class ChapterWaveHUD {
 
         this.progressCountLabel.string =
             `${Math.min(cleared, total)}/${total}`;
+    }
+
+
+    refreshLayout(): void {
+        if (!this.root.isValid) {
+            return;
+        }
+
+        const metrics =
+            BattleHudLayout.getMetrics();
+
+        this.root.setPosition(
+            metrics.safeCenterX,
+            BattleHudLayout.topAnchoredY(
+                568,
+            ),
+            0,
+        );
     }
 
     destroy(): void {

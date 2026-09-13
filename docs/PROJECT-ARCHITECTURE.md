@@ -60,7 +60,7 @@ assets/scripts/systems/
 │  │  └─ upgrade/           # HeroSkillUpgradeService
 │  ├─ progression/
 │  │  ├─ experience/
-│  │  ├─ levelup/           # 波次成长奖励编排
+│  │  ├─ levelup/           # 三选一：技能 + 本局全队属性成长
 │  │  └─ recruitment/       # 招募
 │  └─ equipment/            # EquipmentLoadoutService
 ├─ level/                   # Stage / Wave / Map / Chapter runtime
@@ -88,8 +88,9 @@ ProfessionSkillCatalog
     ↓ 1 passive + 4 active / profession
 ProfessionSkillRunState
     ↓ current-run shared profession skill levels
-HeroSkillUpgradeService ← LevelUpChoiceController
-    ↓ unlock / Lv2~Lv5
+HeroSkillUpgradeService ─┐
+                         ├→ HeroRunUpgradeService ← LevelUpChoiceController
+HeroRunStatState ────────┘   ↓ 技能解锁/升级 + 全队本局属性成长
 HeroSkillRuntime
     ↓ each actor independent cooldown + auto cast
 SkillTargeting → SkillEffectResolver
@@ -102,7 +103,14 @@ CharacterCombatant ← CombatEventBus → EnemyController
 BattlePartyHUD (read-only state display)
 ```
 
-UI 不拥有冷却、等级、能量或释放状态。v0.6.1 后主动技能按钮是状态显示，不是释放入口。v0.6.2 后 Battle 与 HeroSkill 之间只通过 `CombatEventBus` 传播已发生事实；敌人控制/标记统一由 `EnemyStatusSystem` 持有。
+UI 不拥有冷却、等级、能量、属性成长或释放状态。v0.6.1 后主动技能按钮是状态显示，不是释放入口。v0.6.2 后 Battle 与 HeroSkill 之间只通过 `CombatEventBus` 传播已发生事实；敌人控制/标记统一由 `EnemyStatusSystem` 持有。v0.6.6 后 `HeroRunStatState` 是攻击/防御/生命/移速/闪避本局永久成长唯一状态源，`HeroRunUpgradeService` 是技能 + 属性混合三选一唯一入口。
+
+### 英雄移动 / AI / 复活
+
+- `MainHeroController`：玩家主角移动唯一 Runtime；历史 `PlayerController` 不再消费摇杆输入。
+- `CompanionBattleController`：AI 英雄唯一寻怪/追击/回防 Runtime；使用 `EnemyController.findNearestEnemy()` 全战场索敌，只受 `BattleLayoutConfig.heroMoveBounds` 物理地图边界限制。
+- 所有职业基础移动速度读取 `HERO_BASE_MOVE_SPEED`；追击、回防、巡逻不再各自维护隐藏速度常量。
+- `DefenseObjectiveService -> CoreHealth`：主角与伙伴复活通道唯一事实源，复活共同消耗防御塔生命；角色控制器只提交复活请求和接收进度，不自行扣塔血。
 
 ### 英雄仓库 vs 普通仓库
 
@@ -120,7 +128,9 @@ UI 不拥有冷却、等级、能量或释放状态。v0.6.1 后主动技能按�
 - `BattleLayoutConfig`：战场几何坐标唯一来源；v0.6.3 起逻辑地图固定为正式背景原生 900 × 1600（9:16）坐标系。
 - `BattleWorldService`：战场 viewport cover 缩放唯一来源，按当前 `view.getVisibleSize()` 统一缩放背景和所有世界对象。
 - `BattleCameraController`：只负责有限地图跟随与 clamp，使用 BattleWorldRoot 的实际 scale，不再维护第二套固定缩放。
-- `BattleSceneSetup`：正式战斗世界视觉构建入口，已从 `debug/prototype` 迁入 `battle/view`。
+- `BattleSceneSetup`：正式战斗世界视觉构建入口；v0.6.5 起不再绘制怪物泉水调试圆环，泉水只保留为刷怪逻辑坐标。
+- `CoreHealth`：防线生命/全英雄复活消耗/GameOver 唯一状态源；v0.6.5 起显示层使用 BattleWorldRoot 世界血条，不再创建覆盖上半屏的 Canvas 大面板。
+- `BattleHudLayout`：战斗屏幕空间 SafeArea / visibleSize 唯一布局换算入口；只负责 HUD 边缘锚点，不拥有任何战斗业务状态。
 - `EnemyController`：普通/精英/Boss 的生命、移动、受击、死亡链事实来源。
 - `CombatEventBus`：英雄受击、敌人受击/死亡事实事件桥，不拥有生命或伤害状态。
 - `EnemyStatusSystem`：敌人 slow / stun / freeze / taunt / hunter mark 唯一状态源；不复制 EnemyController。

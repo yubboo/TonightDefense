@@ -22,6 +22,10 @@ import {
 } from 'cc';
 import { MoveInputState } from './MoveInputState';
 
+import {
+    BattleHudLayout,
+} from '../layout/BattleHudLayout';
+
 const { ccclass, property } = _decorator;
 
 /**
@@ -68,6 +72,8 @@ export class VirtualJoystick extends Component {
     private touching = false;
     private touchPointDirty = false;
 
+    private layoutRefreshTimer = 0;
+
     start(): void {
         this.createJoystick();
 
@@ -77,7 +83,16 @@ export class VirtualJoystick extends Component {
         console.log('[今晚守城] 虚拟摇杆已启动（微信触摸限频版）');
     }
 
-    update(): void {
+    update(dt: number): void {
+        this.layoutRefreshTimer -= dt;
+
+        if (
+            this.layoutRefreshTimer <= 0
+        ) {
+            this.layoutRefreshTimer = 0.25;
+            this.refreshLayout();
+        }
+
         this.updateKeyboardDirection();
 
         if (this.touching) {
@@ -126,7 +141,16 @@ export class VirtualJoystick extends Component {
         root.layer = Layers.Enum.UI_2D;
 
         canvas.addChild(root);
-        root.setPosition(this.posX, this.posY, 0);
+
+        root.setPosition(
+            BattleHudLayout.leftAnchoredX(
+                this.posX,
+            ),
+            BattleHudLayout.bottomAnchoredY(
+                this.posY,
+            ),
+            0,
+        );
 
         const transform = root.addComponent(UITransform);
         transform.setContentSize(
@@ -155,6 +179,29 @@ export class VirtualJoystick extends Component {
         this.knob = knob;
 
         this.registerTouchEvents();
+    }
+
+
+    private refreshLayout(): void {
+        const root =
+            this.joystickRoot;
+
+        if (
+            !root ||
+            !root.isValid
+        ) {
+            return;
+        }
+
+        root.setPosition(
+            BattleHudLayout.leftAnchoredX(
+                this.posX,
+            ),
+            BattleHudLayout.bottomAnchoredY(
+                this.posY,
+            ),
+            0,
+        );
     }
 
     private drawBase(root: Node): void {

@@ -41,6 +41,10 @@ import {
     BattleArtKey,
 } from '../resources/BattleArt';
 
+import {
+    BattleHudLayout,
+} from '../layout/BattleHudLayout';
+
 const { ccclass } = _decorator;
 
 interface PartyCardView {
@@ -82,6 +86,8 @@ export class BattlePartyHUD extends Component {
         PartyCardView[] = [];
 
     private refreshTimer = 0;
+
+    private layoutRefreshTimer = 0;
 
     private readonly skillCooldownMasks:
         Node[] = [];
@@ -132,6 +138,7 @@ export class BattlePartyHUD extends Component {
         );
 
         this.root = root;
+        this.refreshLayout();
 
         this.node.on(
             BattlePartyHUD.SKILL_STATE_EVENT,
@@ -149,6 +156,15 @@ export class BattlePartyHUD extends Component {
     }
 
     update(dt: number): void {
+        this.layoutRefreshTimer -= dt;
+
+        if (
+            this.layoutRefreshTimer <= 0
+        ) {
+            this.layoutRefreshTimer = 0.25;
+            this.refreshLayout();
+        }
+
         this.refreshTimer -= dt;
 
         if (
@@ -180,6 +196,36 @@ export class BattlePartyHUD extends Component {
         this.skillCooldownLabels.length = 0;
         this.skillLevelLabels.length = 0;
         this.skillDockTitle = null;
+    }
+
+
+    private refreshLayout(): void {
+        const root =
+            this.root;
+
+        if (
+            !root ||
+            !root.isValid
+        ) {
+            return;
+        }
+
+        const metrics =
+            BattleHudLayout.getMetrics();
+
+        /**
+         * v0.6.4：整套底部 HUD 保留 720×1280 设计稿内部坐标，
+         * 只把“设计稿底边 -640”锚到真实 safeBottom。
+         * 五人卡、右侧自动技能区因此会作为一个整体随长屏下移，
+         * 不再悬在旧 1280 高度的中间位置。
+         */
+        root.setPosition(
+            metrics.safeCenterX,
+            BattleHudLayout.bottomAnchoredY(
+                0,
+            ),
+            0,
+        );
     }
 
     private createCommandDeck(
@@ -922,10 +968,13 @@ export class BattlePartyHUD extends Component {
                 fallbackName:
                     '主角',
                 stateText:
-                    heroCombatant
-                        ?.isAlive === false
-                        ? '阵亡'
-                        : '主角',
+                    hero
+                        ?.isReviving
+                        ? '复活中'
+                        : heroCombatant
+                            ?.isAlive === false
+                            ? '阵亡'
+                            : '主角',
                 hpRatio:
                     heroCombatant
                         ? heroCombatant

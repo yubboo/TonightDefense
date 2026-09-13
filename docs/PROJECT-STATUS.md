@@ -2,14 +2,14 @@
 
 ## 当前版本
 
-**v0.6.3 — 战斗背景 / 手机视口统一适配**
+**v0.6.6 — 英雄复活 / AI 自由索敌 / 三选一属性成长 / 敌人红血条**
 
 ## 当前稳定基线
 
 - Cocos Creator：3.8.8。
 - 目标平台：微信小游戏。
 - 场景：`MainMenu.scene` + `Battle.scene`；大厅各功能继续使用页面，不为英雄仓库、普通仓库、商店额外拆 Scene。
-- GitHub：`main` 是源码事实来源；本版本开发基线为 v0.6.2 commit `452b482`，该提交 GitHub Safety Gate 为绿色；用户已确认上一版 Battle 在 Cocos Creator 3.8.8 可正常运行。
+- GitHub：`main` 是远端源码事实来源；开始本轮时远端最新稳定为 v0.6.3 commit `7bfb654`，Safety Gate 为绿色。用户随后已在本机 Cocos Creator 3.8.8 连续验证 v0.6.4 / v0.6.5 画面可运行，因此 v0.6.6 的实际增量基线为用户当前本地 v0.6.5。
 - 音频：唯一 `AudioManager`，唯一运行目录 `assets/resources/audio/`。
 - 暂停：唯一 `BattlePauseService` + `BattlePausePanel`。
 - Boss：继续保持 `BossCatalog -> BossRuntimeController -> EnemyController`；本轮不复制 Boss 生命、掉落或波次逻辑。
@@ -42,6 +42,8 @@ hero/
 - 三选一只从当前上阵职业池抽取：主角职业权重 2；每名 AI 英雄职业权重 1；相同职业叠加权重；同轮不重复同一技能。
 - `ProfessionSkillCatalog` 是职业技能定义唯一来源；`ProfessionSkillRunState` 是单局技能等级唯一来源；`HeroSkillRuntime` 是自动施放/冷却唯一 Runtime；`HeroSkillUpgradeService` 是三选一候选和升级唯一入口。
 - 首批完整设计数据：战士、坦克、游侠、法师、辅助；其余现有职业都有独立可运行技能模组，不再错误回退到同一套通用技能。
+- `HeroRunUpgradeService` 是 v0.6.6 起本局成长三选一统一入口：技能候选继续由 `HeroSkillUpgradeService` 持有，攻击/防御/最大生命/移动速度/闪避等级由 `HeroRunStatState` 持有；禁止 UI 或装备在战斗中另写永久成长。
+- 所有职业基础移动速度统一为 `HERO_BASE_MOVE_SPEED = 138`；技能临时移速效果允许继续走 Skill Modifier，因为技能本身也只能通过三选一解锁/升级。
 
 ### 当前技能效果支持层级
 
@@ -56,6 +58,30 @@ v0.6.2 新增两条底层事实链：
 
 仍未宣称完成的少数觉醒标签包括 `pull`、`split-fireball`、`final-lightning-burst`、`emergency-shield` 等；后续继续通过现有 Battle/Hero 接口实现，不把职业特判写回 HUD。
 
+
+## 英雄复活 / AI / 本局成长（v0.6.6）
+
+- `DefenseObjectiveService -> CoreHealth` 统一负责主角与伙伴复活通道；每名阵亡英雄独立记录传输进度，但共同消耗同一防御塔生命。塔损坏后所有未完成复活立即中断。
+- 主角复活期间 `MainHeroController.isCombatReady = false`，不会注册为有效受击目标，也不会被 AutoAttack / HeroSkillRuntime 当作可行动角色；BattlePartyHUD 显示“复活中”。
+- `CompanionBattleController` 使用 `EnemyController.findNearestEnemy()` 做全战场最近目标搜索，不再存在 `aiHeroMoveBounds/findNearestEnemyInBounds` 第二套交战边界。
+- AI 追怪、回防、巡逻移动都读取 `CharacterCombatant.moveSpeed`；无怪时先真实走回固定阵位，不瞬移归位。
+- `PlayerController` 保留历史组件兼容/调试视觉，但不再读取摇杆或移动主角；唯一玩家移动 Runtime 是 `MainHeroController`。
+- 敌人世界血条普通/精英/Boss 统一红色填充。
+
+## 正式战场原型残留清理（v0.6.5）
+
+- 怪物泉水仍由 `BattleLayoutConfig.enemySpawn.fountains` 提供刷怪位置，但 `BattleSceneSetup` 不再绘制蓝紫色 `EnemyFountain_*` Graphics 圆环。
+- `CoreHealth` 仍是雕像/城墙/公主生命、复活消耗和失败条件唯一状态源；只是把显示从 Canvas 大面板迁到 BattleWorldRoot 内的小型世界血条。
+- 旧 `DefenseStatusUI` / `CoreHpUI` 会在场景进入时从 Canvas 与 BattleWorldRoot 两侧主动清理，兼容 Creator 热重载和覆盖更新。
+- 正式战斗上半屏只保留关卡 HUD、敌人和地图，不再被 642×96 防线调试面板长期占住。
+
+## Battle HUD / SafeArea（v0.6.4）
+
+- 项目设计分辨率继续保持 720 × 1280；不把 iPhone / 安卓物理像素写进 UI 业务代码。
+- `BattleHudLayout` 是战斗屏幕空间布局唯一换算入口：读取实际 visible size / visible origin / safe area，输出中心坐标系中的 safeTop / safeBottom / safeLeft / safeRight。
+- 顶部关卡 HUD、Boss 血条锚定 safeTop；底部五人卡/自动技能 dock 锚定 safeBottom；摇杆锚定 safeLeft + safeBottom。
+- BattleWorld / 正式背景继续使用 v0.6.3 的 900 × 1600 cover 策略；HUD SafeArea 不反向修改战场世界缩放。
+- Creator 设备预览切换时，Chapter HUD 每帧检查布局；Party HUD / Joystick 每 0.25 秒刷新一次边缘锚点，避免长屏切换后停在旧 1280 位置。
 
 ## 战斗视口 / 正式背景（v0.6.3）
 
@@ -79,8 +105,8 @@ v0.6.2 新增两条底层事实链：
 
 ## 当前已知开发重点
 
-1. 在 Cocos Creator 3.8.8 的 720×1280、iPhone 14/15 长屏和微信开发者工具中验证 v0.6.3：背景必须全屏 cover，主战道路/防线保持居中，不再出现“手机框缩在大背景中间”的比例错位。
-2. 回归 v0.6.2 的坦克受击叠层、嘲讽目标切换、游侠印记、冻结/减速、Boss 控制抗性和长时间自动技能循环。
-3. 继续实现剩余觉醒标签：牵引/黑洞、分裂火球、最终雷爆、紧急护盾等；优先扩 Resolver/Status/Event，不新增第二套 Runtime。
-4. 把英雄仓库从“真实数据概览”继续推进到永久英雄等级、培养、突破和逐英雄装备配置；不要把局内技能等级保存成永久等级。
-5. 为所有职业制作独立技能图标/特效，并给 hunter mark / taunt / freeze 等状态增加正式战斗表现；微信真机继续验证 GC、长屏 HUD 和 30/60 FPS。
+1. 在 Cocos Creator 3.8.8 实战验证 v0.6.6：主角阵亡后防御塔应持续扣血并复活主角；塔生命不足时复活中断。
+2. 验证伙伴可追击上方任意怪物；无怪后按真实英雄移速走回固定阵位，不能瞬间跳回防线；所有职业开局移速应一致。
+3. 验证三选一同时能出现职业技能与全队属性卡；疾行/强攻/坚甲/体魄/灵巧只通过该入口永久强化本局属性，新招募英雄能继承已经获得的全队属性等级。
+4. 回归敌人普通/精英/Boss 世界血条均为红色，以及 v0.6.2 的嘲讽、印记、冻结/减速与自动技能循环。
+5. 继续实现剩余觉醒标签和英雄仓库永久培养；永久培养与本局三选一必须保持两套生命周期，不把局内等级写入永久英雄数据。

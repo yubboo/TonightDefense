@@ -13,11 +13,13 @@ export type DefenseObjectiveKind =
     | 'princess';
 
 /**
- * 伙伴复活通道回调。
+ * 英雄复活通道回调。
+ *
  * 防御塔拥有“消耗多少生命、复活进度多少”的权威状态；
- * 伙伴控制器只负责把进度表现成角色血量与能量传输特效。
+ * 主角 / AI 英雄控制器只负责把进度表现成角色血量与复活动画。
+ * 复活业务不再只属于 Companion。
  */
-export interface CompanionReviveCallbacks {
+export interface HeroReviveCallbacks {
     onProgress:
         (progress: number) => void;
 
@@ -49,11 +51,11 @@ export interface DefenseObjectiveProvider {
     isGameOver:
         () => boolean;
 
-    requestCompanionRevive:
+    requestHeroRevive:
         (
-            companionId: string,
+            actorId: string,
             callbacks:
-                CompanionReviveCallbacks,
+                HeroReviveCallbacks,
         ) => boolean;
 }
 
@@ -115,15 +117,15 @@ export class DefenseObjectiveService {
         );
     }
 
-    static requestCompanionRevive(
-        companionId: string,
+    static requestHeroRevive(
+        actorId: string,
         callbacks:
-            CompanionReviveCallbacks,
+            HeroReviveCallbacks,
     ): boolean {
         return (
             this.provider
-                ?.requestCompanionRevive(
-                    companionId,
+                ?.requestHeroRevive(
+                    actorId,
                     callbacks,
                 ) ??
             false

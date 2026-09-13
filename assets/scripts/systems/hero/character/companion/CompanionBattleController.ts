@@ -26,7 +26,6 @@ import {
 
 import {
     EnemyController,
-    EnemySearchBounds,
     EnemyTarget,
 } from '../../../battle/enemy/EnemyController';
 
@@ -63,12 +62,15 @@ import {
     ProfessionDefinition,
 } from '../../profession/definition/ProfessionTypes';
 
+import {
+    HeroRunStatState,
+} from '../../progression/levelup/HeroRunStatState';
+
 const { ccclass } = _decorator;
 
 interface CompanionRuntime {
     definition: CharacterDefinition;
     profession: ProfessionDefinition;
-    engageBounds: EnemySearchBounds;
     node: Node;
     slotIndex: number;
     cooldown: number;
@@ -119,8 +121,8 @@ interface ProjectileRuntime {
  *
  * - 四名 AI 英雄使用“三人横排 + 一人远程后排”的出生/复活阵位。
  * - Character / Profession 与玩家主角完全共用同一套定义。
- * - AI 只在主战场 + 防守区寻找、追击和攻击怪物，不再进入泉水区。
- * - 无可交战目标时返回各自阵位附近巡逻，保持守城阵型。
+ * - AI 不再使用独立寻怪区域：会在完整物理战场内主动寻找最近怪物。
+ * - 无怪时按真实移动速度步行返回各自阵位，再在阵位附近巡逻；禁止瞬移回防。
  * - 阵亡后向防御塔雕像申请持续能量复活。
  */
 @ccclass('CompanionBattleController')
@@ -361,10 +363,6 @@ extends Component {
             CompanionRuntime = {
                 definition,
                 profession,
-                engageBounds:
-                    this.createEngageBounds(
-                        profession.attackRange,
-                    ),
                 node,
                 slotIndex,
 
@@ -419,6 +417,11 @@ extends Component {
                     runtime,
                 );
             },
+        );
+
+        /** 新招募英雄补齐本局已经获得的全队属性强化。 */
+        HeroRunStatState.applySnapshot(
+            combatant,
         );
 
         this.companions.push(
@@ -537,7 +540,7 @@ extends Component {
 
         const accepted =
             DefenseObjectiveService
-                .requestCompanionRevive(
+                .requestHeroRevive(
                     companion
                         .definition
                         .id,
@@ -603,7 +606,7 @@ extends Component {
         companion.combatant
             .beginRevive(
                 BATTLE_LAYOUT
-                    .companionRevive
+                    .heroRevive
                     .initialHpRatio,
             );
 
@@ -642,7 +645,7 @@ extends Component {
 
         const initialRatio =
             BATTLE_LAYOUT
-                .companionRevive
+                .heroRevive
                 .initialHpRatio;
 
         const hpRatio =
@@ -984,20 +987,16 @@ extends Component {
         dt: number,
     ): void {
         /**
-         * v0.4.12：AI 英雄只处理自己“可到达/可攻击”的战斗区目标。
-         * 玩家主角仍然可以主动进入泉水区堵怪，但 AI 英雄不再跟上去单挑。
-         *
-         * engageBounds 已按该英雄职业射程扩展，所以远程英雄可以站在
-         * 主战场边缘攻击刚进入射程的怪物，近战英雄则只锁定更靠近战线的目标。
+         * v0.6.6：取消 AI 独立交战区域。
+         * 伙伴直接从 EnemyController 的完整存活列表里锁定最近敌人，
+         * 只受地图物理边界约束，不再因为 enemyZone/mainZone 被挡住不追怪。
          */
         const enemy =
             EnemyController.instance
-                ?.findNearestEnemyInBounds(
+                ?.findNearestEnemy(
                     companion
                         .node
                         .position,
-                    companion
-                        .engageBounds,
                 );
 
         if (enemy) {
@@ -1074,9 +1073,7 @@ extends Component {
             targetPos.y,
             companion
                 .combatant
-                .moveSpeed *
-                BATTLE_LAYOUT
-                    .companionChaseSpeedMultiplier,
+                .moveSpeed,
             dt,
         );
     }
@@ -1086,6 +1083,54 @@ extends Component {
             CompanionRuntime,
         dt: number,
     ): void {
+        const anchor =
+            BATTLE_LAYOUT
+                .companionAnchors[
+                    companion.slotIndex
+                ];
+        const pos =
+            companion.node.position;
+        const distanceToAnchor =
+            this.distance(
+                pos.x,
+                pos.y,
+                anchor.x,
+                anchor.y,
+            );
+        const guardRadius =
+            Math.max(
+                BATTLE_LAYOUT
+                    .companionGuardPatrolRadiusX,
+                BATTLE_LAYOUT
+                    .companionGuardPatrolRadiusY,
+            );
+
+        /**
+         * 战斗结束后先从当前位置“走回”守备阵位。
+         * 不 setPosition 回城、不使用额外回城速度，完全读取 combatant.moveSpeed。
+         */
+        if (
+            distanceToAnchor >
+            guardRadius * 1.25
+        ) {
+            companion.patrolTarget =
+                null;
+            companion
+                .patrolPauseRemaining =
+                0;
+
+            this.moveToward(
+                companion,
+                anchor.x,
+                anchor.y,
+                companion
+                    .combatant
+                    .moveSpeed,
+                dt,
+            );
+            return;
+        }
+
         if (
             companion
                 .patrolPauseRemaining >
@@ -1112,9 +1157,6 @@ extends Component {
         const target =
             companion.patrolTarget;
 
-        const pos =
-            companion.node.position;
-
         const distance =
             this.distance(
                 pos.x,
@@ -1123,7 +1165,7 @@ extends Component {
                 target.y,
             );
 
-        if (distance <= 7) {
+        if (distance <= 2) {
             companion
                 .node
                 .setPosition(
@@ -1155,50 +1197,11 @@ extends Component {
             companion,
             target.x,
             target.y,
-            Math.min(
-                BATTLE_LAYOUT
-                    .companionPatrolSpeed,
-                companion
-                    .combatant
-                    .moveSpeed *
-                    0.72,
-            ),
+            companion
+                .combatant
+                .moveSpeed,
             dt,
         );
-    }
-
-    /**
-     * AI 英雄的目标区域 = 可移动区域 + 自身职业攻击射程。
-     * 这样不会锁定永远够不到的泉水区怪物，也不会让远程英雄
-     * 因为活动边界而无法攻击边界外、但实际已经进入射程的敌人。
-     */
-    private createEngageBounds(
-        attackRange: number,
-    ): EnemySearchBounds {
-        const moveBounds =
-            BATTLE_LAYOUT
-                .aiHeroMoveBounds;
-
-        const padding =
-            Math.max(
-                0,
-                attackRange,
-            );
-
-        return {
-            minX:
-                moveBounds.minX -
-                padding,
-            maxX:
-                moveBounds.maxX +
-                padding,
-            minY:
-                moveBounds.minY -
-                padding,
-            maxY:
-                moveBounds.maxY +
-                padding,
-        };
     }
 
     private createRandomRoamTarget(
@@ -1213,7 +1216,7 @@ extends Component {
 
         const bounds =
             BATTLE_LAYOUT
-                .aiHeroMoveBounds;
+                .heroMoveBounds;
 
         const x =
             this.randomRange(
@@ -1286,15 +1289,24 @@ extends Component {
                 new Vec2(dx, dy),
             );
 
+        const safeDt =
+            Math.max(
+                0,
+                Math.min(
+                    dt,
+                    1 / 30,
+                ),
+            );
+
         const moveDistance =
             Math.min(
-                speed * dt,
+                speed * safeDt,
                 distance,
             );
 
         const bounds =
             BATTLE_LAYOUT
-                .aiHeroMoveBounds;
+                .heroMoveBounds;
 
         const nextX =
             Math.max(

@@ -26,7 +26,7 @@ import {
 } from '../data/BattleLayoutConfig';
 
 import {
-    CompanionReviveCallbacks,
+    HeroReviveCallbacks,
     DefenseObjectiveKind,
     DefenseObjectiveService,
 } from './DefenseObjectiveService';
@@ -49,12 +49,12 @@ interface ObjectiveBar {
     label: Label;
 }
 
-interface ActiveCompanionRevive {
-    companionId: string;
+interface ActiveHeroRevive {
+    actorId: string;
     elapsed: number;
     drainedCost: number;
     callbacks:
-        CompanionReviveCallbacks;
+        HeroReviveCallbacks;
 }
 
 @ccclass('CoreHealth')
@@ -89,10 +89,10 @@ extends Component {
     private gameOver = false;
     private towerCooldown = 0;
 
-    private readonly activeCompanionRevives =
+    private readonly activeHeroRevives =
         new Map<
             string,
-            ActiveCompanionRevive
+            ActiveHeroRevive
         >();
 
     private towerBar:
@@ -171,12 +171,12 @@ extends Component {
                     () =>
                         this.gameOver,
 
-                requestCompanionRevive:
+                requestHeroRevive:
                     (
                         id,
                         callbacks,
                     ) =>
-                        this.requestCompanionRevive(
+                        this.requestHeroRevive(
                             id,
                             callbacks,
                         ),
@@ -189,7 +189,7 @@ extends Component {
     }
 
     onDestroy(): void {
-        this.activeCompanionRevives.clear();
+        this.activeHeroRevives.clear();
         DefenseObjectiveService.clear();
 
         if (
@@ -208,10 +208,10 @@ extends Component {
         }
 
         /**
-         * 复活能量通道与雕像攻击使用同一个 CoreHealth 状态源。
+         * 主角/伙伴复活能量通道与雕像攻击使用同一个 CoreHealth 状态源。
          * 先处理持续扣血/持续回血，再处理本帧雕像攻击。
          */
-        this.updateCompanionRevives(
+        this.updateHeroRevives(
             dt,
         );
 
@@ -375,10 +375,10 @@ extends Component {
                     this.towerHp <= 0
                 ) {
                     console.log(
-                        '[今晚守城] 防御塔雕像已损坏：后续伙伴无法复活',
+                        '[今晚守城] 防御塔雕像已损坏：后续所有英雄无法复活',
                     );
 
-                    this.cancelAllCompanionRevives();
+                    this.cancelAllHeroRevives();
                 }
                 break;
 
@@ -408,24 +408,24 @@ extends Component {
         this.refreshAll();
     }
 
-    private requestCompanionRevive(
-        companionId: string,
+    private requestHeroRevive(
+        actorId: string,
         callbacks:
-            CompanionReviveCallbacks,
+            HeroReviveCallbacks,
     ): boolean {
         if (
             this.gameOver ||
             this.towerHp <= 0 ||
-            this.activeCompanionRevives
-                .has(companionId)
+            this.activeHeroRevives
+                .has(actorId)
         ) {
             return false;
         }
 
-        this.activeCompanionRevives.set(
-            companionId,
+        this.activeHeroRevives.set(
+            actorId,
             {
-                companionId,
+                actorId,
                 elapsed: 0,
                 drainedCost: 0,
                 callbacks,
@@ -433,17 +433,17 @@ extends Component {
         );
 
         console.log(
-            `[今晚守城] 防御塔开始向 ${companionId} 持续传输复活能量`,
+            `[今晚守城] 防御塔开始向 ${actorId} 持续传输复活能量`,
         );
 
         return true;
     }
 
-    private updateCompanionRevives(
+    private updateHeroRevives(
         dt: number,
     ): void {
         if (
-            this.activeCompanionRevives
+            this.activeHeroRevives
                 .size <= 0
         ) {
             return;
@@ -451,7 +451,7 @@ extends Component {
 
         const revive =
             BATTLE_LAYOUT
-                .companionRevive;
+                .heroRevive;
 
         const safeDt =
             Math.max(
@@ -466,7 +466,7 @@ extends Component {
 
         for (
             const [id, channel]
-            of this.activeCompanionRevives
+            of this.activeHeroRevives
         ) {
             if (
                 this.gameOver ||
@@ -474,7 +474,7 @@ extends Component {
             ) {
                 channel.callbacks
                     .onCancel?.();
-                this.activeCompanionRevives
+                this.activeHeroRevives
                     .delete(id);
                 continue;
             }
@@ -539,7 +539,7 @@ extends Component {
 
                     channel.callbacks
                         .onCancel?.();
-                    this.activeCompanionRevives
+                    this.activeHeroRevives
                         .delete(id);
 
                     console.log(
@@ -563,7 +563,7 @@ extends Component {
             ) {
                 channel.callbacks
                     .onCancel?.();
-                this.activeCompanionRevives
+                this.activeHeroRevives
                     .delete(id);
 
                 console.log(
@@ -581,11 +581,11 @@ extends Component {
                 channel.callbacks
                     .onComplete();
 
-                this.activeCompanionRevives
+                this.activeHeroRevives
                     .delete(id);
 
                 console.log(
-                    `[今晚守城] ${channel.companionId} 复活能量传输完成，共消耗雕像 ${channel.drainedCost} HP`,
+                    `[今晚守城] ${channel.actorId} 复活能量传输完成，共消耗雕像 ${channel.drainedCost} HP`,
                 );
             }
         }
@@ -595,17 +595,17 @@ extends Component {
         }
     }
 
-    private cancelAllCompanionRevives(): void {
+    private cancelAllHeroRevives(): void {
         for (
             const channel
-            of this.activeCompanionRevives
+            of this.activeHeroRevives
                 .values()
         ) {
             channel.callbacks
                 .onCancel?.();
         }
 
-        this.activeCompanionRevives.clear();
+        this.activeHeroRevives.clear();
     }
 
     private triggerGameOver(): void {
@@ -614,7 +614,7 @@ extends Component {
         }
 
         this.gameOver = true;
-        this.cancelAllCompanionRevives();
+        this.cancelAllHeroRevives();
 
         console.log(
             '[今晚守城] 公主受到攻击：守城失败',
@@ -631,208 +631,106 @@ extends Component {
             return;
         }
 
-        const old =
-            canvas.getChildByName(
+        /**
+         * v0.6.5：正式战斗不再保留覆盖上半屏的大块“防线状态”面板。
+         * 旧节点可能来自 Creator 热重载，因此 Canvas / World 两边都主动清理。
+         */
+        for (
+            const name of [
                 'DefenseStatusUI',
+                'CoreHpUI',
+            ]
+        ) {
+            canvas
+                .getChildByName(
+                    name,
+                )
+                ?.destroy();
+        }
+
+        const worldRoot =
+            BattleWorldService.ensure(
+                canvas,
             );
 
-        if (old) {
-            old.destroy();
+        for (
+            const name of [
+                'DefenseObjectiveWorldUI',
+                'DefenseStatusUI',
+                'CoreHpUI',
+            ]
+        ) {
+            worldRoot
+                .getChildByName(
+                    name,
+                )
+                ?.destroy();
         }
 
         /**
-         * 兼容旧 CoreHpUI，避免旧血条残留。
+         * 防线生命改成“世界内目标条”：跟随城墙/雕像一起移动，
+         * 只在玩家真正看到防线时出现，不再长期占用战斗上半屏。
          */
-        const oldCore =
-            canvas.getChildByName(
-                'CoreHpUI',
-            );
-
-        if (oldCore) {
-            oldCore.destroy();
-        }
-
         const root =
             new Node(
-                'DefenseStatusUI',
+                'DefenseObjectiveWorldUI',
             );
 
         root.layer =
             Layers.Enum.UI_2D;
 
-        canvas.addChild(root);
-
-        root.setPosition(
-            0,
-            448,
-            0,
-        );
+        worldRoot.addChild(root);
 
         root.addComponent(
             UITransform,
         ).setContentSize(
-            642,
-            96,
+            BATTLE_LAYOUT.map.width,
+            BATTLE_LAYOUT.map.height,
         );
-
-        const shadow =
-            new Node(
-                'DefenseStatusShadow',
-            );
-
-        shadow.layer =
-            Layers.Enum.UI_2D;
-        root.addChild(shadow);
-        shadow.setPosition(
-            0,
-            -4,
-            0,
-        );
-
-        const shadowGraphics =
-            shadow.addComponent(
-                Graphics,
-            );
-
-        shadowGraphics.fillColor =
-            new Color(
-                46,
-                60,
-                53,
-                60,
-            );
-
-        shadowGraphics.roundRect(
-            -321,
-            -48,
-            642,
-            96,
-            24,
-        );
-        shadowGraphics.fill();
-
-        const panel =
-            new Node(
-                'DefenseStatusPanel',
-            );
-
-        panel.layer =
-            Layers.Enum.UI_2D;
-        root.addChild(panel);
-
-        const panelGraphics =
-            panel.addComponent(
-                Graphics,
-            );
-
-        panelGraphics.fillColor =
-            new Color(
-                248,
-                242,
-                216,
-                248,
-            );
-
-        panelGraphics.roundRect(
-            -321,
-            -48,
-            642,
-            96,
-            24,
-        );
-        panelGraphics.fill();
-
-        panelGraphics.fillColor =
-            new Color(
-                255,
-                251,
-                238,
-                105,
-            );
-
-        panelGraphics.roundRect(
-            -306,
-            9,
-            610,
-            22,
-            11,
-        );
-        panelGraphics.fill();
-
-        panelGraphics.strokeColor =
-            new Color(
-                221,
-                203,
-                158,
-                255,
-            );
-        panelGraphics.lineWidth = 2.5;
-
-        panelGraphics.roundRect(
-            -321,
-            -48,
-            642,
-            96,
-            24,
-        );
-        panelGraphics.stroke();
-
-        const titleNode =
-            new Node(
-                'DefenseStatusTitle',
-            );
-
-        titleNode.layer =
-            Layers.Enum.UI_2D;
-        root.addChild(titleNode);
-        titleNode.setPosition(
-            -258,
-            29,
-            0,
-        );
-        titleNode.addComponent(
-            UITransform,
-        ).setContentSize(
-            96,
-            20,
-        );
-
-        const titleLabel =
-            titleNode.addComponent(
-                Label,
-            );
-
-        titleLabel.string =
-            '防线状态';
-        titleLabel.fontSize = 14;
-        titleLabel.lineHeight = 18;
-        titleLabel.color =
-            new Color(
-                111,
-                96,
-                67,
-                255,
-            );
 
         this.towerBar =
-            this.createBar(
+            this.createWorldObjectiveBar(
                 root,
                 '雕像',
-                10,
-                250,
+                BATTLE_LAYOUT
+                    .defenseTower
+                    .x,
+                BATTLE_LAYOUT
+                    .defenseTower
+                    .y +
+                    128,
+                136,
+                new Color(
+                    75,
+                    199,
+                    220,
+                    255,
+                ),
             );
 
         this.wallBar =
-            this.createBar(
+            this.createWorldObjectiveBar(
                 root,
                 '城墙',
-                -18,
-                250,
+                BATTLE_LAYOUT
+                    .wall
+                    .x,
+                BATTLE_LAYOUT
+                    .wall
+                    .y +
+                    58,
+                188,
+                new Color(
+                    212,
+                    171,
+                    88,
+                    255,
+                ),
             );
 
         const princess =
             new Node(
-                'PrincessStatus',
+                'PrincessWorldStatus',
             );
 
         princess.layer =
@@ -840,111 +738,56 @@ extends Component {
         root.addChild(princess);
 
         princess.setPosition(
-            230,
-            -4,
+            BATTLE_LAYOUT.princess.x,
+            BATTLE_LAYOUT.princess.y +
+                72,
             0,
         );
 
         princess.addComponent(
             UITransform,
         ).setContentSize(
-            152,
-            58,
+            92,
+            20,
         );
 
-        const princessGraphics =
+        const princessBg =
             princess.addComponent(
                 Graphics,
             );
 
-        princessGraphics.fillColor =
+        princessBg.fillColor =
             new Color(
-                245,
-                229,
-                192,
-                255,
+                36,
+                49,
+                55,
+                190,
             );
-
-        princessGraphics.roundRect(
-            -76,
-            -29,
-            152,
-            58,
+        princessBg.roundRect(
+            -46,
+            -10,
+            92,
             20,
+            10,
         );
-        princessGraphics.fill();
+        princessBg.fill();
 
-        princessGraphics.fillColor =
+        princessBg.strokeColor =
             new Color(
-                255,
-                247,
-                230,
-                115,
+                236,
+                210,
+                148,
+                225,
             );
-
-        princessGraphics.roundRect(
-            -62,
-            7,
-            124,
-            8,
-            4,
-        );
-        princessGraphics.fill();
-
-        princessGraphics.strokeColor =
-            new Color(
-                222,
-                198,
-                154,
-                255,
-            );
-        princessGraphics.lineWidth = 2;
-
-        princessGraphics.roundRect(
-            -76,
-            -29,
-            152,
-            58,
+        princessBg.lineWidth = 1.5;
+        princessBg.roundRect(
+            -46,
+            -10,
+            92,
             20,
+            10,
         );
-        princessGraphics.stroke();
-
-        const princessTitle =
-            new Node(
-                'PrincessCaption',
-            );
-
-        princessTitle.layer =
-            Layers.Enum.UI_2D;
-        princess.addChild(princessTitle);
-        princessTitle.setPosition(
-            0,
-            11,
-            0,
-        );
-        princessTitle.addComponent(
-            UITransform,
-        ).setContentSize(
-            96,
-            16,
-        );
-
-        const princessCaption =
-            princessTitle.addComponent(
-                Label,
-            );
-
-        princessCaption.string =
-            '最终守护';
-        princessCaption.fontSize = 12;
-        princessCaption.lineHeight = 14;
-        princessCaption.color =
-            new Color(
-                136,
-                101,
-                96,
-                255,
-            );
+        princessBg.stroke();
 
         const labelNode =
             new Node(
@@ -954,16 +797,11 @@ extends Component {
         labelNode.layer =
             Layers.Enum.UI_2D;
         princess.addChild(labelNode);
-        labelNode.setPosition(
-            0,
-            -10,
-            0,
-        );
         labelNode.addComponent(
             UITransform,
         ).setContentSize(
-            120,
-            24,
+            86,
+            18,
         );
 
         const label =
@@ -971,13 +809,13 @@ extends Component {
                 Label,
             );
 
-        label.fontSize = 18;
-        label.lineHeight = 22;
+        label.fontSize = 11;
+        label.lineHeight = 14;
         label.color =
             new Color(
-                109,
-                71,
-                78,
+                255,
+                244,
+                214,
                 255,
             );
 
@@ -985,24 +823,24 @@ extends Component {
             label;
     }
 
-    private createBar(
+    private createWorldObjectiveBar(
         parent: Node,
         title: string,
+        x: number,
         y: number,
         width: number,
+        fillColor: Color,
     ): ObjectiveBar {
         const root =
             new Node(
-                `${title}Bar`,
+                `${title}WorldBar`,
             );
 
         root.layer =
             Layers.Enum.UI_2D;
-
         parent.addChild(root);
-
         root.setPosition(
-            -60,
+            x,
             y,
             0,
         );
@@ -1010,189 +848,47 @@ extends Component {
         root.addComponent(
             UITransform,
         ).setContentSize(
-            430,
-            26,
-        );
-
-        const badge =
-            new Node(
-                'Badge',
-            );
-
-        badge.layer =
-            Layers.Enum.UI_2D;
-        root.addChild(badge);
-        badge.setPosition(
-            -144,
-            0,
-            0,
-        );
-        badge.addComponent(
-            UITransform,
-        ).setContentSize(
-            108,
-            26,
-        );
-
-        const badgeGraphics =
-            badge.addComponent(
-                Graphics,
-            );
-
-        badgeGraphics.fillColor =
-            title === '雕像'
-                ? new Color(
-                    224,
-                    240,
-                    244,
-                    255,
-                )
-                : new Color(
-                    238,
-                    228,
-                    208,
-                    255,
-                );
-
-        badgeGraphics.roundRect(
-            -54,
-            -13,
-            108,
-            26,
-            13,
-        );
-        badgeGraphics.fill();
-
-        badgeGraphics.strokeColor =
-            title === '雕像'
-                ? new Color(
-                    141,
-                    193,
-                    204,
-                    255,
-                )
-                : new Color(
-                    201,
-                    166,
-                    109,
-                    255,
-                );
-
-        badgeGraphics.lineWidth = 2;
-        badgeGraphics.roundRect(
-            -54,
-            -13,
-            108,
-            26,
-            13,
-        );
-        badgeGraphics.stroke();
-
-        const labelNode =
-            new Node(
-                'Label',
-            );
-
-        labelNode.layer =
-            Layers.Enum.UI_2D;
-        badge.addChild(labelNode);
-        labelNode.addComponent(
-            UITransform,
-        ).setContentSize(
-            96,
+            width,
             20,
         );
 
-        const label =
-            labelNode.addComponent(
-                Label,
-            );
-
-        label.fontSize = 15;
-        label.lineHeight = 18;
-        label.color =
-            new Color(
-                66,
-                68,
-                65,
-                255,
-            );
-
         const bg =
-            new Node(
-                'Bg',
-            );
-
-        bg.layer =
-            Layers.Enum.UI_2D;
-        root.addChild(bg);
-        bg.setPosition(
-            78,
-            0,
-            0,
-        );
-        bg.addComponent(
-            UITransform,
-        ).setContentSize(
-            width,
-            16,
-        );
-
-        const bgGraphics =
-            bg.addComponent(
+            root.addComponent(
                 Graphics,
             );
 
-        bgGraphics.fillColor =
+        bg.fillColor =
             new Color(
-                64,
-                69,
-                73,
-                240,
+                35,
+                45,
+                48,
+                205,
             );
-
-        bgGraphics.roundRect(
+        bg.roundRect(
             -width / 2,
             -7,
             width,
             14,
             7,
         );
-        bgGraphics.fill();
+        bg.fill();
 
-        bgGraphics.fillColor =
+        bg.strokeColor =
             new Color(
-                94,
-                99,
-                103,
-                135,
+                235,
+                216,
+                165,
+                230,
             );
-
-        bgGraphics.roundRect(
-            -width / 2 + 6,
-            1,
-            width - 12,
-            3,
-            2,
-        );
-        bgGraphics.fill();
-
-        bgGraphics.strokeColor =
-            new Color(
-                46,
-                52,
-                58,
-                255,
-            );
-        bgGraphics.lineWidth = 2;
-        bgGraphics.roundRect(
+        bg.lineWidth = 1.5;
+        bg.roundRect(
             -width / 2,
             -7,
             width,
             14,
             7,
         );
-        bgGraphics.stroke();
+        bg.stroke();
 
         const fill =
             new Node(
@@ -1201,7 +897,7 @@ extends Component {
 
         fill.layer =
             Layers.Enum.UI_2D;
-        bg.addChild(fill);
+        root.addChild(fill);
 
         const transform =
             fill.addComponent(
@@ -1212,10 +908,9 @@ extends Component {
             0,
             0.5,
         );
-
         transform.setContentSize(
             width - 6,
-            10,
+            8,
         );
 
         fill.setPosition(
@@ -1224,64 +919,63 @@ extends Component {
             0,
         );
 
-        const fg =
+        const fillGraphics =
             fill.addComponent(
                 Graphics,
             );
 
-        fg.fillColor =
-            title === '雕像'
-                ? new Color(
-                    87,
-                    188,
-                    205,
-                    255,
-                )
-                : new Color(
-                    190,
-                    148,
-                    91,
-                    255,
-                );
-
-        fg.roundRect(
+        fillGraphics.fillColor =
+            fillColor;
+        fillGraphics.roundRect(
             0,
-            -5,
+            -4,
             width - 6,
-            10,
-            5,
-        );
-        fg.fill();
-
-        fg.fillColor =
-            title === '雕像'
-                ? new Color(
-                    174,
-                    234,
-                    245,
-                    155,
-                )
-                : new Color(
-                    233,
-                    204,
-                    156,
-                    145,
-                );
-
-        fg.roundRect(
             8,
-            1,
-            width - 24,
-            3,
-            2,
+            4,
         );
-        fg.fill();
+        fillGraphics.fill();
+
+        const labelNode =
+            new Node(
+                'Label',
+            );
+
+        labelNode.layer =
+            Layers.Enum.UI_2D;
+        root.addChild(labelNode);
+        labelNode.setPosition(
+            0,
+            0,
+            0,
+        );
+        labelNode.addComponent(
+            UITransform,
+        ).setContentSize(
+            width - 8,
+            18,
+        );
+
+        const label =
+            labelNode.addComponent(
+                Label,
+            );
+
+        label.fontSize = 10;
+        label.lineHeight = 12;
+        label.color =
+            new Color(
+                255,
+                255,
+                244,
+                255,
+            );
 
         return {
             fill,
             label,
         };
     }
+
     private createDamageOverlay(): void {
         const canvas =
             this.node.parent;

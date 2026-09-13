@@ -1,7 +1,7 @@
 {
   "project": "TonightDefense",
   "displayName": "今晚守城",
-  "architectureVersion": "3.1.0",
+  "architectureVersion": "3.3.0",
   "engine": "Cocos Creator 3.8.8",
   "rulesFile": "AGENTS.md",
   "domains": [
@@ -15,7 +15,11 @@
         "ProfessionSkillCatalog owns profession skill modules",
         "ProfessionSkillRunState owns in-run skill levels",
         "EquipmentLoadoutService owns hero equipment combat modifiers",
-        "HeroSkillRuntime consumes CombatEventBus/EnemyStatusSystem instead of owning enemy state"
+        "HeroSkillRuntime consumes CombatEventBus/EnemyStatusSystem instead of owning enemy state",
+        "HeroRunStatState owns in-run attack, defense, max-HP, move-speed and dodge growth levels",
+        "HeroRunUpgradeService is the only mixed skill/stat three-choice entry",
+        "MainHeroController is the only player movement runtime",
+        "CompanionBattleController owns AI global targeting, chase and walk-back behavior using CharacterCombatant moveSpeed"
       ],
       "modules": {
         "character": [
@@ -68,7 +72,8 @@
         "EnemyController owns enemy life, movement, attack and death facts",
         "CombatEventBus only publishes completed combat facts",
         "EnemyStatusSystem owns enemy slow, stun, freeze, taunt and hunter mark state",
-        "BattleTargetRegistry owns live hero target registration and lookup"
+        "BattleTargetRegistry owns live hero target registration and lookup",
+        "DefenseObjectiveService/CoreHealth owns revive channels and tower-HP revive cost for all heroes"
       ]
     },
     {
@@ -149,6 +154,24 @@
       "modules": [
         "AudioManager.ts",
         "GameAudioSettings.ts"
+      ]
+    },
+    {
+      "id": "ui",
+      "name": "界面域",
+      "path": "assets/scripts/ui",
+      "modules": [
+        "layout",
+        "hud",
+        "input",
+        "panels",
+        "resources",
+        "boot"
+      ],
+      "singleSourceRules": [
+        "BattleHudLayout owns battle-screen visibleSize/SafeArea coordinate conversion",
+        "HUD reads runtime state and does not own combat state",
+        "BattleWorld scaling remains in BattleWorldService and is not duplicated by HUD layout"
       ]
     }
   ]

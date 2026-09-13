@@ -39,6 +39,7 @@ export interface CharacterCombatModifier {
     attackSpeedMultiplier?: number;
     damageReduction?: number;
     healingReceivedMultiplier?: number;
+    dodgeChanceFlat?: number;
 }
 
 @ccclass('CharacterCombatant')
@@ -49,6 +50,7 @@ export class CharacterCombatant extends Component {
     private defenseValue = 0;
     private moveSpeedValue = 100;
     private shieldValue = 0;
+    private dodgeChanceValue = 0;
 
     private readonly modifiers =
         new Map<string, CharacterCombatModifier>();
@@ -71,6 +73,7 @@ export class CharacterCombatant extends Component {
             this.maxHpValue;
 
         this.shieldValue = 0;
+        this.dodgeChanceValue = 0;
         this.modifiers.clear();
 
         this.attackValue =
@@ -103,6 +106,20 @@ export class CharacterCombatant extends Component {
 
         const raw =
             Math.max(0, rawDamage);
+
+        /**
+         * 闪避属于英雄统一战斗属性。
+         * 只有真正的三选一/技能 Modifier 能提高它；基础值为 0。
+         * 闪避成功表示本次伤害事实没有发生，因此不发布 hero-damaged。
+         */
+        if (
+            raw > 0 &&
+            this.dodgeChance > 0 &&
+            Math.random() <
+                this.dodgeChance
+        ) {
+            return 0;
+        }
 
         const afterDefense =
             Math.max(
@@ -170,7 +187,7 @@ export class CharacterCombatant extends Component {
         if (this.hpValue <= 0) {
             /**
              * 先进入死亡不可见态，再通知外层。
-             * 这样伙伴死亡回调若立即启动“持续复活”，可以安全地重新激活节点，
+             * 这样英雄死亡回调若立即启动“持续复活”，可以安全地重新激活节点，
              * 不会在回调返回后又被这里二次设回 inactive。
              */
             this.node.active = false;
@@ -367,6 +384,27 @@ export class CharacterCombatant extends Component {
         );
     }
 
+    get dodgeChance(): number {
+        let bonus =
+            this.dodgeChanceValue;
+
+        for (const modifier of this.modifiers.values()) {
+            bonus +=
+                Math.max(
+                    0,
+                    modifier.dodgeChanceFlat ?? 0,
+                );
+        }
+
+        return Math.max(
+            0,
+            Math.min(
+                0.60,
+                bonus,
+            ),
+        );
+    }
+
     get healingReceivedMultiplier(): number {
         let multiplier = 1;
 
@@ -410,7 +448,8 @@ export class CharacterCombatant extends Component {
             | 'attack_percent'
             | 'defense_flat'
             | 'max_hp_percent'
-            | 'move_speed_percent',
+            | 'move_speed_percent'
+            | 'dodge_flat',
         value: number,
     ): void {
         switch (kind) {
@@ -441,6 +480,8 @@ export class CharacterCombatant extends Component {
             case 'max_hp_percent': {
                 const oldMax =
                     this.maxHpValue;
+                const wasAlive =
+                    this.isAlive;
 
                 this.maxHpValue =
                     Math.max(
@@ -461,15 +502,17 @@ export class CharacterCombatant extends Component {
                  * 最大生命增加多少，就同步恢复多少，
                  * 避免“升级生命上限但当前血量不动”显得吃亏。
                  */
-                this.hpValue =
-                    Math.min(
-                        this.maxHpValue,
-                        this.hpValue +
-                            (
-                                this.maxHpValue -
-                                oldMax
-                            ),
-                    );
+                if (wasAlive) {
+                    this.hpValue =
+                        Math.min(
+                            this.maxHpValue,
+                            this.hpValue +
+                                (
+                                    this.maxHpValue -
+                                    oldMax
+                                ),
+                        );
+                }
 
                 this.refreshHpBar();
                 break;
@@ -487,6 +530,18 @@ export class CharacterCombatant extends Component {
                                     value,
                                 )
                             ),
+                    );
+                break;
+
+            case 'dodge_flat':
+                this.dodgeChanceValue =
+                    Math.max(
+                        0,
+                        Math.min(
+                            0.60,
+                            this.dodgeChanceValue +
+                                Math.max(0, value),
+                        ),
                     );
                 break;
         }

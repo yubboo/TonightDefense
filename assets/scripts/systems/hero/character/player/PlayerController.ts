@@ -12,14 +12,21 @@ import {
     Node,
     UITransform,
 } from 'cc';
-import { MoveInputState } from '../../../../ui/input/MoveInputState';
+import {
+    HERO_BASE_MOVE_SPEED,
+} from '../../profession/definition/ProfessionTypes';
 
 const { ccclass, property } = _decorator;
 
+/**
+ * 历史兼容组件。
+ * v0.6.6 起 MainHeroController 是玩家移动唯一 Runtime；
+ * 这里不再读取摇杆或写入角色坐标，避免第二套 moveSpeed 逻辑回归。
+ */
 @ccclass('PlayerController')
 export class PlayerController extends Component {
     @property
-    moveSpeed = 300;
+    moveSpeed = HERO_BASE_MOVE_SPEED;
 
     @property
     minX = -320;
@@ -33,27 +40,7 @@ export class PlayerController extends Component {
     @property
     maxY = 430;
 
-    update(dt: number): void {
-        const dir = MoveInputState.direction;
-
-        if (dir.lengthSqr() <= 0.0001) {
-            return;
-        }
-
-        const pos = this.node.position;
-
-        const nextX = Math.max(
-            this.minX,
-            Math.min(this.maxX, pos.x + dir.x * this.moveSpeed * dt),
-        );
-
-        const nextY = Math.max(
-            this.minY,
-            Math.min(this.maxY, pos.y + dir.y * this.moveSpeed * dt),
-        );
-
-        this.node.setPosition(nextX, nextY, pos.z);
-    }
+    /** 玩家移动由 MainHeroController 唯一负责。 */
 
     static drawDebugVisual(node: Node): void {
         node.getComponent(UITransform)?.setContentSize(100, 100);

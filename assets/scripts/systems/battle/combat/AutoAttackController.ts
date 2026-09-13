@@ -110,7 +110,7 @@ extends Component {
         if (
             !heroNode ||
             !combatant ||
-            !combatant.isAlive
+            !hero?.isCombatReady
         ) {
             return;
         }

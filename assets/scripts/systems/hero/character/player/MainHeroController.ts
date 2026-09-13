@@ -63,6 +63,14 @@ import {
     EquipmentLoadoutService,
 } from '../../equipment/EquipmentLoadoutService';
 
+import {
+    DefenseObjectiveService,
+} from '../../../battle/objective/DefenseObjectiveService';
+
+import {
+    HeroRunStatState,
+} from '../../progression/levelup/HeroRunStatState';
+
 const {
     ccclass,
     property,
@@ -80,7 +88,7 @@ extends Component {
      * 正常游戏使用 ProfessionSystem 中的数值。
      */
     @property
-    moveSpeed = 155;
+    moveSpeed = 138;
 
     @property
     maxHp = 260;
@@ -121,6 +129,8 @@ extends Component {
     private combatantValue:
         CharacterCombatant | null =
         null;
+
+    private revivingValue = false;
 
     private selectedCharacterValue:
         CharacterDefinition | null =
@@ -193,7 +203,8 @@ extends Component {
         if (
             !this.heroNode ||
             !this.combatantValue
-                ?.isAlive
+                ?.isAlive ||
+            this.revivingValue
         ) {
             this.updateVisualMovement(
                 0,
@@ -365,6 +376,19 @@ extends Component {
         return this.combatantValue;
     }
 
+
+    get isReviving(): boolean {
+        return this.revivingValue;
+    }
+
+    get isCombatReady(): boolean {
+        return !!(
+            this.heroNode?.isValid &&
+            this.combatantValue?.isAlive &&
+            !this.revivingValue
+        );
+    }
+
     get selectedCharacter():
         CharacterDefinition | null {
         return this.selectedCharacterValue;
@@ -483,18 +507,26 @@ extends Component {
                     stats.defense +
                     equipment.defenseFlat,
 
+                /**
+                 * v0.6.6：所有英雄使用统一基础移速。
+                 * 装备不再私下改变主角移速；本局永久移速成长统一来自三选一。
+                 */
                 moveSpeed:
-                    stats.moveSpeed *
-                    (1 + equipment.moveSpeedPercent),
+                    stats.moveSpeed,
 
                 hpBarY: 70,
                 hpBarWidth: 66,
             },
             () => {
-                console.log(
-                    `[今晚守城] 主角 ${character.name} 阵亡`,
+                this.onMainHeroDeath(
+                    character,
                 );
             },
+        );
+
+        /** 新加入本局的主角补齐本局已选择的全队属性强化。 */
+        HeroRunStatState.applySnapshot(
+            combatant,
         );
 
         BattleTargetRegistry.register(
@@ -513,17 +545,23 @@ extends Component {
 
                 isAlive:
                     () =>
-                        combatant.isAlive,
+                        combatant.isAlive &&
+                        !this.revivingValue,
 
                 takeDamage:
                     (
                         amount,
                         source,
-                    ) =>
-                        combatant.takeDamage(
+                    ) => {
+                        if (this.revivingValue) {
+                            return 0;
+                        }
+
+                        return combatant.takeDamage(
                             amount,
                             source,
-                        ),
+                        );
+                    },
             },
         );
 
@@ -532,6 +570,8 @@ extends Component {
 
         this.visualMoving = false;
         this.visualFacing = 0;
+
+        this.revivingValue = false;
 
         this.combatantValue =
             combatant;
@@ -556,6 +596,142 @@ extends Component {
         );
     }
 
+
+    private onMainHeroDeath(
+        character:
+            CharacterDefinition,
+    ): void {
+        this.updateVisualMovement(
+            0,
+            0,
+        );
+
+        console.log(
+            `[今晚守城] 主角 ${character.name} 阵亡，等待防御塔复活`,
+        );
+
+        const accepted =
+            DefenseObjectiveService
+                .requestHeroRevive(
+                    'main-hero',
+                    {
+                        onProgress:
+                            (progress) => {
+                                this.applyMainHeroReviveProgress(
+                                    progress,
+                                );
+                            },
+                        onComplete:
+                            () => {
+                                this.completeMainHeroRevive();
+                            },
+                        onCancel:
+                            () => {
+                                this.cancelMainHeroRevive();
+                            },
+                    },
+                );
+
+        if (!accepted) {
+            console.log(
+                '[今晚守城] 主角无法开始复活：防御塔已损坏或复活通道不可用',
+            );
+            return;
+        }
+
+        this.beginMainHeroRevive();
+    }
+
+    private beginMainHeroRevive(): void {
+        const hero =
+            this.heroNode;
+        const combatant =
+            this.combatantValue;
+
+        if (
+            !hero ||
+            !hero.isValid ||
+            !combatant
+        ) {
+            return;
+        }
+
+        this.revivingValue = true;
+
+        hero.setPosition(
+            BATTLE_LAYOUT
+                .mainHeroReviveAnchor
+                .x,
+            BATTLE_LAYOUT
+                .mainHeroReviveAnchor
+                .y,
+            0,
+        );
+
+        combatant.beginRevive(
+            BATTLE_LAYOUT
+                .heroRevive
+                .initialHpRatio,
+        );
+    }
+
+    private applyMainHeroReviveProgress(
+        progress: number,
+    ): void {
+        if (
+            !this.revivingValue ||
+            !this.combatantValue
+        ) {
+            return;
+        }
+
+        const safeProgress =
+            Math.max(
+                0,
+                Math.min(1, progress),
+            );
+        const initialRatio =
+            BATTLE_LAYOUT
+                .heroRevive
+                .initialHpRatio;
+        const hpRatio =
+            initialRatio +
+            (1 - initialRatio) *
+                safeProgress;
+
+        this.combatantValue
+            .setReviveProgress(
+                hpRatio,
+            );
+    }
+
+    private completeMainHeroRevive(): void {
+        if (!this.combatantValue) {
+            return;
+        }
+
+        this.combatantValue
+            .setReviveProgress(1);
+        this.revivingValue = false;
+
+        console.log(
+            '[今晚守城] 主角已由防御塔满血复活',
+        );
+    }
+
+    private cancelMainHeroRevive(): void {
+        if (!this.combatantValue) {
+            return;
+        }
+
+        this.revivingValue = false;
+        this.combatantValue
+            .cancelRevive();
+
+        console.log(
+            '[今晚守城] 主角复活中断',
+        );
+    }
 
     /**
      * AutoAttackController 调用，

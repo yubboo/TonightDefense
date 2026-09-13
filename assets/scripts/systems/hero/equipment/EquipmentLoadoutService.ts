@@ -24,11 +24,15 @@ export type EquipmentSlot =
     | 'necklace'
     | 'wings';
 
+/**
+ * 装备只决定开局战斗基线。
+ * v0.6.6 起本局永久攻击/防御/生命/移速/闪避成长统一由三选一负责；
+ * 装备尤其不再直接提供移动速度百分比，避免主角/伙伴出现隐藏速度差。
+ */
 export interface EquipmentCombatModifiers {
     attackFlat: number;
     defenseFlat: number;
     maxHpPercent: number;
-    moveSpeedPercent: number;
 }
 
 interface EquipmentRule {
@@ -42,7 +46,6 @@ const ZERO:
         attackFlat: 0,
         defenseFlat: 0,
         maxHpPercent: 0,
-        moveSpeedPercent: 0,
     };
 
 const RULES:
@@ -50,11 +53,11 @@ const RULES:
         { itemId: 'weapon_sword', slot: 'weapon', modifiers: { ...ZERO, attackFlat: 4 } },
         { itemId: 'shield', slot: 'offhand', modifiers: { ...ZERO, defenseFlat: 3 } },
         { itemId: 'armor', slot: 'armor', modifiers: { ...ZERO, maxHpPercent: 0.12 } },
-        { itemId: 'boots', slot: 'boots', modifiers: { ...ZERO, moveSpeedPercent: 0.08 } },
+        { itemId: 'boots', slot: 'boots', modifiers: { ...ZERO, defenseFlat: 1 } },
         { itemId: 'helmet', slot: 'helmet', modifiers: { ...ZERO, defenseFlat: 2, maxHpPercent: 0.05 } },
         { itemId: 'ring', slot: 'ring', modifiers: { ...ZERO, attackFlat: 2 } },
         { itemId: 'necklace', slot: 'necklace', modifiers: { ...ZERO, maxHpPercent: 0.08 } },
-        { itemId: 'wings', slot: 'wings', modifiers: { ...ZERO, moveSpeedPercent: 0.12, attackFlat: 3 } },
+        { itemId: 'wings', slot: 'wings', modifiers: { ...ZERO, attackFlat: 3 } },
     ];
 
 /** 装备穿戴与战斗属性结算的唯一入口。 */
@@ -122,7 +125,6 @@ export class EquipmentLoadoutService {
             total.attackFlat += rule.modifiers.attackFlat;
             total.defenseFlat += rule.modifiers.defenseFlat;
             total.maxHpPercent += rule.modifiers.maxHpPercent;
-            total.moveSpeedPercent += rule.modifiers.moveSpeedPercent;
         }
 
         return total;
