@@ -1,209 +1,228 @@
 import {
+    BlockInputEvents,
     Color,
-    Graphics,
     Node,
+    UITransform,
 } from 'cc';
 
+import {
+    MainMenuMetaState,
+} from '../MainMenuModels';
+import {
+    MainMenuFullscreenShell,
+} from '../widgets/MainMenuFullscreenShell';
 import {
     MainMenuIcons,
     MainMenuIconKind,
 } from '../widgets/MainMenuIcons';
+import {
+    MainMenuTheme,
+} from '../widgets/MainMenuTheme';
+import {
+    MainMenuUIFactory,
+} from '../widgets/MainMenuUIFactory';
 
-import { MainMenuTheme } from '../widgets/MainMenuTheme';
-import { MainMenuUIFactory } from '../widgets/MainMenuUIFactory';
-import { MainMenuArt } from '../widgets/MainMenuArt';
+type UpgradeSection = 'statue' | 'wall' | 'princess';
 
-type UpgradeSection =
-    | 'statue'
-    | 'wall'
-    | 'princess';
+export interface MainMenuUpgradePageOptions {
+    parent: Node;
+    metaState: MainMenuMetaState;
+}
 
 export class MainMenuUpgradePage {
     private readonly root: Node;
-
+    private viewportHeight = 1280;
     private active: UpgradeSection = 'statue';
 
-    constructor(parent: Node) {
+    constructor(
+        private readonly options: MainMenuUpgradePageOptions,
+    ) {
         this.root = MainMenuUIFactory.node(
-            parent,
+            options.parent,
             'UpgradePage',
             720,
-            1000,
-            0,
-            0,
+            1600,
         );
+        this.root.addComponent(BlockInputEvents);
+        this.build();
+    }
 
+    setViewportHeight(viewportHeight: number): void {
+        const next = Math.max(1280, Math.min(1600, viewportHeight));
+        if (Math.abs(next - this.viewportHeight) < 0.5) return;
+
+        this.viewportHeight = next;
+        this.root.getComponent(UITransform)?.setContentSize(720, next);
         this.build();
     }
 
     destroy(): void {
-        if (this.root.isValid) {
-            this.root.destroy();
-        }
+        if (this.root.isValid) this.root.destroy();
     }
 
     private build(): void {
         for (const child of [...this.root.children]) child.destroy();
         this.root.removeAllChildren();
 
-        const panel = MainMenuUIFactory.paperCard(
+        const shell = MainMenuFullscreenShell.create(
             this.root,
-            'UpgradePanel',
-            700,
-            970,
-            0,
-            0,
+            this.viewportHeight,
+            {
+                title: '王城升级',
+                icon: 'upgrade',
+                metaState: this.options.metaState,
+            },
         );
-        MainMenuArt.attach(panel, 'panel-stage-blank', 714, 986, 'stretch');
-
-        const title = MainMenuUIFactory.darkButton(
-            panel,
-            'TitleBar',
-            660,
-            72,
-            0,
-            432,
+        const configs: readonly [
+            UpgradeSection,
+            string,
+            MainMenuIconKind,
+        ][] = [
+            ['statue', '守护雕像', 'upgrade'],
+            ['wall', '城墙防线', 'wall'],
+            ['princess', '公主守护', 'princess'],
+        ];
+        this.createTabs(shell.body, shell.topLocalY - 50, configs);
+        this.createHeading(shell.body, shell.topLocalY - 112);
+        const currentIcon =
+            configs.find((item) => item[0] === this.active)?.[2]
+            ?? 'upgrade';
+        this.createContent(
+            shell.body,
+            shell.topLocalY,
+            shell.bottomLocalY,
+            currentIcon,
         );
+    }
 
-        MainMenuIcons.create(
-            title,
-            'Icon',
-            'upgrade',
-            -258,
-            0,
-            46,
-            MainMenuTheme.white,
-        );
-
-        MainMenuUIFactory.label(
-            title,
-            'Title',
-            '升级',
-            -158,
-            0,
-            30,
-            140,
-            MainMenuTheme.white,
-        );
-
-        const configs:
-            readonly [
-                UpgradeSection,
-                string,
-                MainMenuIconKind,
-            ][] = [
-                ['statue', '防御塔雕像', 'upgrade'],
-                ['wall', '城墙', 'wall'],
-                ['princess', '公主', 'princess'],
-            ];
-
-        const xs = [-190, 0, 190];
-
+    private createTabs(
+        panel: Node,
+        y: number,
+        configs: readonly [UpgradeSection, string, MainMenuIconKind][],
+    ): void {
+        const xs = [-220, 0, 220];
         configs.forEach(([id, text], index) => {
             const active = id === this.active;
-
             const tab = MainMenuUIFactory.roundedBox(
                 panel,
                 `Tab_${id}`,
-                176,
-                50,
+                202,
+                54,
                 xs[index],
-                370,
+                y,
                 active
                     ? new Color(255, 205, 80, 255)
-                    : new Color(63, 68, 65, 255),
+                    : new Color(49, 57, 55, 255),
                 MainMenuTheme.ink,
-                4,
+                8,
                 3,
+                true,
             );
-
             MainMenuUIFactory.label(
                 tab,
                 'Label',
                 text,
                 0,
                 0,
-                15,
-                150,
-                active
-                    ? MainMenuTheme.ink
-                    : MainMenuTheme.white,
+                18,
+                174,
+                active ? MainMenuTheme.ink : MainMenuTheme.white,
             );
-
-            MainMenuUIFactory.bindPress(
-                tab,
-                () => {
-                    this.active = id;
-                    this.build();
-                },
-            );
+            MainMenuUIFactory.bindPress(tab, () => {
+                this.active = id;
+                this.build();
+            });
         });
+    }
 
-        const currentIcon =
-            configs.find(
-                (item) =>
-                    item[0] === this.active,
-            )?.[2] ?? 'upgrade';
-
-        this.createContent(panel, currentIcon);
+    private createHeading(panel: Node, y: number): void {
+        const title =
+            this.active === 'statue'
+                ? '守护雕像'
+                : this.active === 'wall'
+                    ? '城墙防线'
+                    : '公主守护';
+        MainMenuUIFactory.label(
+            panel,
+            'SectionTitle',
+            title,
+            -220,
+            y,
+            24,
+            220,
+            MainMenuTheme.ink,
+        );
+        MainMenuUIFactory.label(
+            panel,
+            'SectionSummary',
+            '防线养成 · 属性总览',
+            215,
+            y,
+            15,
+            250,
+            MainMenuTheme.inkSoft,
+        );
     }
 
     private createContent(
         panel: Node,
+        topLocalY: number,
+        bottomLocalY: number,
         iconKind: MainMenuIconKind,
     ): void {
-        const left = MainMenuUIFactory.roundedBox(
+        const cardY = topLocalY - 350;
+        const visual = MainMenuUIFactory.roundedBox(
             panel,
             'Visual',
-            220,
-            370,
-            -160,
-            75,
+            300,
+            390,
+            -165,
+            cardY,
             new Color(218, 223, 211, 255),
-            MainMenuTheme.ink,
-            5,
+            new Color(104, 92, 69, 255),
+            14,
             4,
+            true,
         );
-
         MainMenuIcons.create(
-            left,
+            visual,
             'LargeIcon',
             iconKind,
             0,
-            42,
-            180,
+            48,
+            190,
             this.active === 'princess'
                 ? new Color(242, 141, 174, 255)
                 : new Color(172, 179, 182, 255),
         );
-
         MainMenuUIFactory.label(
-            left,
+            visual,
             'Name',
             this.active === 'statue'
                 ? '守护雕像'
                 : this.active === 'wall'
-                    ? '城墙'
-                    : '公主',
+                    ? '王城城墙'
+                    : '王城公主',
             0,
-            -95,
-            22,
-            180,
+            -132,
+            24,
+            250,
+            MainMenuTheme.ink,
         );
 
-        const right = MainMenuUIFactory.roundedBox(
+        const stats = MainMenuUIFactory.roundedBox(
             panel,
             'Stats',
-            305,
-            370,
-            128,
-            75,
-            MainMenuTheme.cream,
-            MainMenuTheme.ink,
-            5,
+            300,
+            390,
+            165,
+            cardY,
+            new Color(249, 245, 231, 255),
+            new Color(104, 92, 69, 255),
+            14,
             4,
+            true,
         );
-
         const lines =
             this.active === 'statue'
                 ? [
@@ -227,72 +246,94 @@ export class MainMenuUpgradePage {
                     ];
 
         lines.forEach(([label, value], index) => {
-            const y = 118 - index * 62;
-
+            const y = 126 - index * 62;
             MainMenuUIFactory.label(
-                right,
+                stats,
                 `Label_${index}`,
                 label,
                 -78,
                 y,
-                16,
-                100,
+                17,
+                110,
                 MainMenuTheme.inkSoft,
             );
-
             MainMenuUIFactory.label(
-                right,
+                stats,
                 `Value_${index}`,
                 value,
-                75,
+                74,
                 y,
-                17,
-                120,
+                18,
+                130,
+                MainMenuTheme.ink,
             );
         });
 
         const upgrade = MainMenuUIFactory.yellowButton(
-            right,
+            stats,
             'UpgradeButton',
-            220,
-            58,
+            238,
+            62,
             0,
-            -138,
+            -148,
         );
-
         MainMenuUIFactory.label(
             upgrade,
             'Label',
-            this.active === 'statue'
-                ? '升级暂未开放'
-                : '培养暂未开放',
+            this.active === 'statue' ? '升级暂未开放' : '培养暂未开放',
             0,
-            0,
+            4,
             18,
-            160,
+            190,
+            MainMenuTheme.ink,
         );
 
-        MainMenuUIFactory.bindPress(
-            upgrade,
-            () => {
-                // 入口先建立，真实养成数值后续接入。
-            },
-        );
-
-        MainMenuUIFactory.label(
+        const rule = MainMenuUIFactory.roundedBox(
             panel,
+            'RulePanel',
+            630,
+            154,
+            0,
+            topLocalY - 640,
+            new Color(238, 229, 203, 255),
+            new Color(185, 151, 83, 255),
+            12,
+            2,
+        );
+        MainMenuUIFactory.label(
+            rule,
+            'RuleTitle',
+            '防线规则',
+            -220,
+            42,
+            19,
+            150,
+            MainMenuTheme.ink,
+        );
+        MainMenuUIFactory.label(
+            rule,
             'RuleHint',
             this.active === 'statue'
-                ? '主角与伙伴阵亡后都由雕像消耗自身生命复活；雕像损坏后停止全部复活。'
+                ? '主角与伙伴阵亡后由雕像消耗自身生命复活；雕像损坏后停止全部复活。'
                 : this.active === 'wall'
                     ? '雕像被破坏后怪物攻击城墙；城墙生命归零后破城。'
                     : '公主是最终守护目标；当前战斗规则为 1 点生命。',
             0,
-            -330,
-            15,
-            520,
+            -18,
+            16,
+            570,
             MainMenuTheme.inkSoft,
             70,
+        );
+        MainMenuUIFactory.label(
+            panel,
+            'Footer',
+            '升级页当前只建立正式 UI 入口，真实养成数值后续接入统一服务。',
+            0,
+            bottomLocalY + 46,
+            15,
+            620,
+            MainMenuTheme.inkSoft,
         );
     }
 }

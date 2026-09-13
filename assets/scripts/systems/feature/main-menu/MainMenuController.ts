@@ -29,6 +29,14 @@ import {
 } from '../../economy/CurrencyService';
 
 import {
+    ShopService,
+} from '../../economy/shop/ShopService';
+
+import type {
+    ShopOfferId,
+} from '../../economy/shop/ShopTypes';
+
+import {
     InventoryService,
 } from '../../storage/inventory/runtime/InventoryService';
 
@@ -208,6 +216,19 @@ extends Component {
                     onBuyStamina:
                         () =>
                             this.buyStamina(),
+
+                    getShopSnapshot:
+                        () =>
+                            ShopService
+                                .getSnapshot(),
+
+                    onBuyShopOffer:
+                        (
+                            offerId,
+                        ) =>
+                            this.buyShopOffer(
+                                offerId,
+                            ),
 
                     onClaimMeal:
                         (
@@ -517,6 +538,17 @@ extends Component {
         MainMenuActionResult {
         return StaminaService
             .purchaseStamina();
+    }
+
+    private buyShopOffer(
+        offerId:
+            ShopOfferId,
+    ):
+        MainMenuActionResult {
+        return ShopService
+            .tryPurchase(
+                offerId,
+            );
     }
 
     private claimMeal(

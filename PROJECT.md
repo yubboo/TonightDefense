@@ -3,7 +3,7 @@
 ## 项目信息
 
 - 项目名：TonightDefense
-- 当前整理包版本：v0.6.6
+- 当前整理包版本：v0.6.17
 - Cocos Creator：3.8.8
 - 目标平台：微信小游戏
 
@@ -19,6 +19,88 @@ AI / Agent / 自动化修改项目时，统一遵循项目根目录 `AGENTS.md`�
 
 源码包不包含 `library`、`temp`、`build`、`native` 等自动生成目录，以减少缓存污染和 Windows 路径过长问题。
 源码包包含 `design-reference/` 共享设计素材库，便于 GitHub 与网页端 AI 按正式设计继续开发。
+
+
+
+
+
+## v0.6.17 英雄 / 仓库 / 升级全屏 UI
+
+- `MainMenuHeroPage`、`MainMenuWarehousePage`、`MainMenuUpgradePage` 从旧的 700×970 居中面板升级为与商店一致的全屏 Page；三页自带深绿金边 Header、资源余额栏和浅色羊皮纸正文。
+- 新增 `MainMenuFullscreenShell` 作为三页共用的全屏背景、Header、资源栏与底栏安全区唯一布局入口；页面正文精确结束在 132 px 常驻底栏顶边。
+- 五个主入口继续复用唯一 `MainMenuBottomNav`，`MainMenuView` 仍唯一负责 Page 生命周期与选中态；只有战斗大厅显示旧 TopHUD / Logo。
+- 英雄页保留人物、职业、技能、培养、装备五个真实 Catalog 入口；仓库继续只读取 Inventory 快照；升级页先完成正式 UI，不新增养成业务状态。
+- 三页主要标题、Tab、卡片与按钮文字统一提高到 15–28 px 可读区间，并按长屏 `visibleDesignHeight` 自适应。
+
+## v0.6.16 商品按钮垂直光学居中
+
+- 更正 v0.6.15 只处理水平重心、未解决按钮内容偏下的问题。
+- 商品卡的售罄、免费、金币和钻石内容统一上移 6 px，使文字与货币图标在 42 px 按钮底板中视觉居中。
+- 按钮底板、水平居中布局、价格数据和购买逻辑不变。
+
+## v0.6.15 商品价格内容居中
+
+- 修复商品卡价格底板居中但“货币图标 + 价格文字”组合整体偏左的问题。
+- 付费按钮统一使用紧凑的居中内容组；金币、钻石和不同位数价格共用同一套坐标，免费与售罄文案保持正中心。
+- 商品卡尺寸、文字分区和交易逻辑不变。
+
+## v0.6.14 商店商品卡文字重叠修复
+
+- 修复商店主要字号放大后，商品名称、描述、奖励、限购与价格区仍挤在旧 316 px 卡片中的重叠问题。
+- 唯一商品卡模板统一增高到 356 px，行距调整为 372 px；头图上移，正文按“名称 → 描述 → 奖励 → 限购 → 按钮”重新分区。
+- 保留 v0.6.11 的可读字号，不针对单个商品写特殊坐标；商品数据、售罄状态和购买逻辑不变。
+
+## v0.6.13 商店与常驻底栏接缝修复
+
+- 修复 v0.6.12 将商店底部 142 px 透明后，在羊皮纸正文与 132 px 常驻底栏之间露出城堡背景细条的问题。
+- ShopPage 专属背景、羊皮纸和 ScrollView 现在精确结束在底栏顶边；不覆盖底栏、不留透明缝，凸起选中框继续使用唯一 `MainMenuBottomNav` 实现。
+- 商品布局、放大字号、五个独立 Page 和交易业务保持不变。
+
+## v0.6.12 底栏选中态背景统一
+
+- 五个主入口继续共用唯一 `MainMenuBottomNav`；本轮没有增加页面专用选中框或第二套底栏。
+- ShopPage 底部 142 px 曾改为透明以尝试统一背衬；该方案产生水平背景细条，已由 v0.6.13 的“页面精确衔接底栏顶边”规则取代。
+- 商店 Header、羊皮纸正文、滚动安全区、字号和交易逻辑保持 v0.6.11 行为。
+
+## v0.6.11 MainMenu 底栏常驻 / 商店文字可读性
+
+- 直接复用既有 `MainMenuBottomNav`，商店、英雄、战斗、仓库、升级五个独立 Page 始终显示同一条底部导航，不创建商店专用副本。
+- `MainMenuView` 继续唯一管理五项选中态和 Page 生命周期；商店仅隐藏大厅 TopHUD，保留自身标题/资源栏和常驻底栏。
+- Shop ScrollView 为 132 px 底栏及 10 px 间距预留安全区，商品、页脚和触摸热区不会落到导航下面。
+- 商店资源数量、Banner 说明、分类、商品名称、描述、奖励、限购、价格按钮和页脚字号整体提高；交易、库存和限购逻辑不变。
+
+## v0.6.10 ShopPage 分类头图统一 / 卡片去重叠
+
+- 推荐、礼包、材料、外观、每日五个分类统一保留同高度顶部主题区；推荐继续显示主促销与体力补给，其余分类使用各自独立透明主题插画，不与下方商品卡头图重复。
+- 商品卡不再同时绘制 Graphics 外框、整卡 Sprite 和第二张价格按钮 Sprite；普通卡只使用 `shop_card_normal`，售罄卡使用 `shop_card_disabled`，按钮区域只叠动态图标与文字。
+- 四张已在设计切片库中的分类主题插画按需进入 Runtime；`ShopArt` 继续是唯一资源路径入口，ShopService / CurrencyService / InventoryService / StaminaService 不变。
+
+## v0.6.9 ShopPage 方案 C 视觉回归修复 / 精确切图
+
+- 延续 v0.6.8 的 ShopService / CurrencyService / InventoryService 交易事实链，本轮只修 ShopPage 视觉与素材裁切，不改购买、限购、扣款和库存逻辑。
+- 重新按三张源图真实透明边界精确裁切运行时 Banner / Card / Header / Price / Divider，清除 v0.6.8 自动切图把邻近红丝带、金线等一起裁入造成的串图脏边。
+- Shop ScrollView 正文补回方案 C 的浅色羊皮纸承载层；标题/提示不再直接落在深绿色背景上，商品少时也不会留下大片“像没做完”的深色空洞。
+- 推荐/礼包等单数商品的最后一张卡自动居中；商品卡尺寸、头图、标题和正文可读性同步放大，保持 720 设计宽与长屏兼容。
+- 所有 `cover` Banner 统一放进固定尺寸 Mask 图片窗，放大裁切后不再越界覆盖相邻卡片；卡片标题、描述、奖励、限购和购买按钮改为互不重叠的纵向区域，短列表页脚固定沉底。
+- 三张原始素材表仍保留在 `design-reference/shop/v0.6.8-source/`；`v0.6.8-sliced-library/` 作为同一批源图的切片库继续复用，但其中切片内容已按 v0.6.9 精确修正，避免重复保存第二套大图源文件。
+
+## v0.6.8 ShopPage 方案 C 美术资源化 / 自动切图接入
+
+- 商店继续属于 `MainMenu.scene -> ShopPage`，不新增 Scene，不改变 ShopService / CurrencyService / InventoryService 的业务归属。
+- 用户确认的「方案 C」三张生成式素材表已经以原图保存在 `design-reference/shop/v0.6.8-source/`，并在源码包内预切成独立 PNG；运行时不再要求人工进入 Sprite Editor 切图。
+- 新增 `ShopArt` 作为商店 SpriteFrame 加载入口；顶部标题栏、返回按钮、资源胶囊、推荐 Banner、体力 Banner、商品卡片、价格按钮、外观占位图等都从 `assets/resources/ui/shop/` 正式资源加载。
+- ShopPage 布局从左侧窄分类栏改成「顶部推荐区 + 横向分类 Tabs + 双列商品卡」的方案 C；正文使用 ScrollView，720×1280 与长屏都能完整浏览。
+- 商店 UI 仍只读取 `ShopSnapshot` 并发出购买意图；限购、扣款、发货、库存、体力购买规则没有复制到 UI。
+
+## v0.6.7 MainMenu 全屏商店 / 确定性购买闭环
+
+- 以 GitHub v0.6.6 `6baed393` 为稳定基线；对应 TonightDefense Safety Gate #10 已通过。本轮不修改 Battle/Hero Runtime，只开发 MainMenu.scene 内的 ShopPage。
+- `MainMenuShopPage` 从 700×970 局部纸张面板升级为全屏 Page：打开商店时隐藏大厅 TopHUD / Logo / BottomNav，由商店自己的返回按钮、资源栏、分类栏和商品区接管完整视口；仍然留在 MainMenu.scene，不新增 Shop.scene。
+- 新增 `systems/economy/shop/ShopCatalog.ts`：商店商品定义唯一来源；当前提供每日补给、英雄成长礼包、守城补强礼包、冒险礼包、强化石/魔法粉尘/铁锭/魔能结晶补给。
+- 新增 `ShopService.ts`：每日购买次数、金币/钻石扣除、库存容量检查、道具发放和本地持久化的唯一交易入口。UI 不直接扣货币、不直接写 Inventory。
+- 商店只使用游戏内金币/钻石和确定性商品，不包含随机抽取。`外观` 分类先保留正式全屏入口，等 Hero 外观系统建立后再接真实商品。
+- 原有体力购买继续唯一走 `StaminaService.purchaseStamina()`；ShopPage 只负责显示购买次数/价格并发送购买意图，避免复制第二套体力状态。
+- 分类切换正式可用：推荐 / 礼包 / 材料 / 外观 / 每日；购买后同页刷新资源余额、每日剩余次数和售罄状态。
 
 ## v0.6.6 英雄复活 / AI 自由索敌 / 三选一属性成长 / 敌人红血条
 

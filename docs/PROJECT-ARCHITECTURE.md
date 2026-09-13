@@ -36,7 +36,7 @@ assets/scripts/systems/
 ├─ account/                 # 登录 / 平台 / 账号模型
 ├─ audio/                   # 唯一 AudioManager
 ├─ battle/                  # 战斗目标、敌人、Boss、防线、伤害、场景表现
-├─ economy/                 # CurrencyService + legacy compatibility
+├─ economy/                 # CurrencyService + ShopCatalog/ShopService + legacy compatibility
 ├─ feature/                 # pause / settings / stamina / tutorial / main-menu
 ├─ gameplay/                # 模式、规则、单局会话
 ├─ hero/                    # 英雄大系统（重点）
@@ -117,6 +117,12 @@ UI 不拥有冷却、等级、能量、属性成长或释放状态。v0.6.1 后�
 `MainMenuHeroPage` = 英雄仓库/英雄养成中心：人物、职业、技能、培养、英雄装备。
 
 `MainMenuWarehousePage` + `systems/storage/` = 普通仓库/背包：装备物品、材料、道具、消耗品及持有数量。
+
+`MainMenuShopPage` = MainMenu.scene 内独立商店页面；打开时隐藏大厅 TopHUD，自带返回与资源栏，但必须复用并保留常驻 `MainMenuBottomNav`。Page 专属背景和滚动层精确结束在 132 px 底栏顶边，不得覆盖导航或留下透出其它页面背景的水平缝隙。`MainMenuView` 唯一管理商店、英雄、战斗、仓库、升级五个独立 Page 的切换与底栏选中态。交易事实不在 UI：`ShopCatalog` 定义商品，`ShopService` 唯一处理每日限购/扣款/发货，`CurrencyService` 与 `InventoryService` 继续分别拥有余额和库存。
+
+`MainMenuFullscreenShell` = HeroPage / WarehousePage / UpgradePage 共用的全屏视觉骨架；统一 Header、资源余额栏、羊皮纸正文和 132 px 底栏安全边界，不持有英雄、库存或升级业务状态。只有 BattlePage 使用大厅 TopHUD / Logo，其余四个独立 Page 使用自身 Header。
+
+v0.6.8 起 `ShopArt` 是 ShopPage 正式 SpriteFrame 加载入口；三张原始素材表保留在 `design-reference/shop/v0.6.8-source/`，预切运行资源分别进入 `chrome/`、`banners/`、`icons/`、`item-cards/`。UI 不需要人工 SpriteEditor 切图，也不把资源路径散落到交易逻辑。 v0.6.9 继续保持这一入口，并要求运行时切片按源图 alpha 边界精确裁切；页面视觉层新增固定羊皮纸正文背景，不改变商店业务状态归属。
 
 “英雄装备”可以读取 Storage 中的装备物品，但穿戴关系与战斗修正由 `EquipmentLoadoutService` 管；不复制物品库存。
 

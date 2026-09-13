@@ -6,7 +6,7 @@ Cocos Creator 3.8.8 微信小游戏割草守城项目。
 
 开始较大修改前依次阅读：`AGENTS.md` → `docs/PROJECT-STATUS.md` → `docs/PROJECT-ARCHITECTURE.md` → `docs/development/PROJECT-RULES.md` → `docs/DEVELOPMENT-PLAN.md`。当前版本记录见 `PROJECT.md`。
 
-## v0.6.6 目录重点
+## v0.6.17 目录重点
 
 - `assets/scripts/systems/hero/`：英雄大系统，统一人物、职业、技能、局内成长和英雄装备。
 - `assets/scripts/systems/storage/`：普通背包/物品/仓库，不保存英雄培养状态。
@@ -21,6 +21,10 @@ Cocos Creator 3.8.8 微信小游戏割草守城项目。
 - `assets/scripts/systems/hero/character/companion/CompanionBattleController.ts`：全战场自由索敌，追击/回防统一使用真实英雄移动速度。
 - `assets/scripts/systems/level/`：Stage、Wave、Map、关卡推进。
 - `assets/scripts/systems/feature/`：暂停、设置、体力、教程、大厅等独立功能。
+- `assets/scripts/systems/economy/shop/`：全屏商店商品目录与唯一交易服务；金币/钻石扣款后统一发放到 Inventory。
+- `assets/scripts/ui/panels/main-menu/MainMenuBottomNav.ts`：商店、英雄、战斗、仓库、升级五个独立 Page 共用且常驻的唯一底部主导航。
+- `assets/scripts/ui/panels/main-menu/pages/MainMenuShopPage.ts`：MainMenu.scene 内的商店 Page；商品卡使用可读文字分区，四种价格按钮状态均做水平与垂直光学居中。
+- `assets/scripts/ui/panels/main-menu/widgets/MainMenuFullscreenShell.ts`：英雄、仓库、升级共用的全屏背景、Header、资源栏和 132 px 底栏安全区布局入口。
 - `assets/scripts/ui/layout/BattleHudLayout.ts`：720×1280 设计坐标到真实 visibleSize / SafeArea 的统一 HUD 锚点换算。
 - `docs/architecture/project-modules.json`：当前机器可读模块骨架。
 - `docs/design/HERO-PROFESSION-SKILLS.md`：职业技能设计与接入规范。

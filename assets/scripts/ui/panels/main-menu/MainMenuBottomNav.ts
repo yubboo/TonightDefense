@@ -294,7 +294,7 @@ export class MainMenuBottomNav {
                     config.label,
                     0,
                     -31,
-                    20,
+                    22,
                     104,
                     MainMenuTheme.white,
                 );

@@ -99,6 +99,13 @@ Windows PowerShell 5.1 下，Git 默认 `core.quotePath=true` 会把中文路径
 
 如果一次检查突然把大量已知存在的相对 import 全部报成缺失，优先判定检查器自身回归，不得据此改动游戏源码。Windows PowerShell 5.1 下路径解析优先使用 `System.IO.File.Exists/Directory.Exists` 等字面量 API；脚本源码自检不得在双引号字符串里意外展开 `$Branch` 等变量后再做 `IndexOf` 比对。
 
+## 14. MainMenu 页面与常驻导航
+
+- 大厅只复用一个 `MainMenuBottomNav`，固定为商店、英雄、战斗、仓库、升级五项；所有主 Page 均保持它可见。
+- `MainMenuView` 是主导航选中态和独立 Page 生命周期的唯一管理者；各 Page 不复制底栏，不维护第二份主页面状态。
+- 页面必须在实际可见高度内为 132 px 底栏预留空间；Page 专属背景和滚动层应精确衔接底栏顶边，不得覆盖底栏，也不得留下透出其它页面背景的水平缝隙；点击区域不得进入底栏范围。
+- 720 设计宽的核心正文和按钮文字以 16 px 为默认可读下限，次要说明不低于 14 px；修改字号时同步检查行高、换行、溢出和长屏布局。
+
 ### Windows ZIP / Unicode 文件名
 
 - 根目录维护工具统一 ASCII 文件名；`清理Cocos缓存.bat` 已统一为 `Clear-Cocos-Cache.bat`。

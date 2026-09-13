@@ -2,18 +2,97 @@
 
 ## 当前版本
 
-**v0.6.6 — 英雄复活 / AI 自由索敌 / 三选一属性成长 / 敌人红血条**
+**v0.6.17 — 英雄 / 仓库 / 升级全屏 UI**
 
 ## 当前稳定基线
 
 - Cocos Creator：3.8.8。
 - 目标平台：微信小游戏。
 - 场景：`MainMenu.scene` + `Battle.scene`；大厅各功能继续使用页面，不为英雄仓库、普通仓库、商店额外拆 Scene。
-- GitHub：`main` 是远端源码事实来源；开始本轮时远端最新稳定为 v0.6.3 commit `7bfb654`，Safety Gate 为绿色。用户随后已在本机 Cocos Creator 3.8.8 连续验证 v0.6.4 / v0.6.5 画面可运行，因此 v0.6.6 的实际增量基线为用户当前本地 v0.6.5。
+- GitHub：`main` 是远端源码事实来源；本轮开发基线为 v0.6.6 commit `6baed393`，TonightDefense Safety Gate #10 已完成且 conclusion=success。
 - 音频：唯一 `AudioManager`，唯一运行目录 `assets/resources/audio/`。
 - 暂停：唯一 `BattlePauseService` + `BattlePausePanel`。
 - Boss：继续保持 `BossCatalog -> BossRuntimeController -> EnemyController`；本轮不复制 Boss 生命、掉落或波次逻辑。
 - 战斗地图：`StageCatalog` 管关卡内容，`BattleMapCatalog` 管主题，`BattleLayoutConfig` 管战斗几何坐标。
+
+
+
+
+## 英雄 / 仓库 / 升级全屏 UI（v0.6.17）
+
+- 英雄、仓库、升级三个 Page 已改为与 ShopPage 同级的 720 设计宽全屏页面；旧大厅 TopHUD / Logo 只在战斗首页显示。
+- 三页共同使用 `MainMenuFullscreenShell`：统一深绿色背景、商店同源 Header / 资源胶囊、浅色羊皮纸正文，并精确衔接 132 px 常驻底栏。
+- `MainMenuBottomNav` 仍只有一个实例，由 `MainMenuView.openTab()` 统一切换商店、英雄、战斗、仓库、升级并更新选中态。
+- 英雄页继续读取 Character / Profession / Skill Catalog；普通仓库继续读取 `InventoryService` 快照；升级页仅建立 UI 入口，没有复制永久成长状态。
+- 三页主要交互文字不低于 16 px，说明文字保持 14–16 px，长屏高度继续跟随 `visibleDesignHeight`。
+
+## 商品按钮垂直光学居中（v0.6.16）
+
+- 商品卡按钮节点和底板位置不变，仅将内部文字及货币图标统一设置为 `contentY=6`。
+- 售罄、免费、金币、钻石四种状态共享相同的垂直光学校正，避免系统字体和图标可见区域偏下。
+- v0.6.15 的水平居中继续保留，交易回调未修改。
+
+## 商品价格内容居中（v0.6.15）
+
+- 商品价格底板位置不变；统一把货币图标从 `x=-72` 调整为 `x=-48`，价格文字使用 `x=26 / width=100` 的紧凑区域。
+- 金币与钻石商品共享同一居中布局；免费和售罄状态继续使用 `x=0` 的纯文字居中布局。
+- ShopService、价格数据、扣款与购买回调均未改动。
+
+## 商店商品卡文字重叠修复（v0.6.14）
+
+- 商品卡从 322×316 统一调整为 322×356，双列行距从 332 调整为 372；单数末卡继续居中。
+- 头图、名称、描述、最多两行奖励、限购和价格按钮重新获得独立垂直区间，保留 14–22 px 可读字号。
+- 普通、售罄、免费和付费卡继续共用一个 `createOfferCard()` 布局入口；ShopService 与 Snapshot 未改动。
+
+## 商店与常驻底栏接缝修复（v0.6.13）
+
+- 修复 v0.6.12 商店羊皮纸与常驻底栏之间出现城堡背景细条的视觉回归。
+- ShopPage 专属背景、纸张和 ScrollView 统一结束在 `-half + 132` 的底栏顶边；纸张不再额外内缩 8 px。
+- `MainMenuBottomNav`、选中框与五个 Page 切换逻辑没有复制或改写，商店交易逻辑不变。
+
+## 底栏选中态背景统一（v0.6.12）
+
+- `MainMenuBottomNav` 的几何、选中框和五项入口仍只有一份实现。
+- v0.6.12 曾让 ShopPage 底部 142 px 透出大厅公共背景；实机预览暴露水平细缝后，该做法已由 v0.6.13 取代。
+- Shop ScrollView 仍严格停在常驻底栏上方，交易逻辑和 v0.6.11 字号调整不变。
+
+## MainMenu 底栏常驻（v0.6.11）
+
+- 复用既有 `MainMenuBottomNav`；商店、英雄、战斗、仓库、升级五个主 Page 始终保留同一底栏及对应选中态。
+- 五个主入口仍由 `MainMenuView.openTab()` 创建各自独立 Page，不新增第二套导航或当前页面状态。
+- Shop ScrollView 底部预留 142 px，避开 132 px 导航与 10 px 间距；商店顶部继续使用自己的标题和资源栏。
+- 商店原先 10–15 px 的主要正文、限购、奖励和按钮文字提高到 14–18 px 区间，商品标题提高到 22 px；业务状态和交易服务未改动。
+
+## ShopPage 分类头图统一（v0.6.10）
+
+- 五个分类都有固定 258 高度的顶部主题区；非推荐分类使用独立主题插画，避免页面结构忽高忽低。
+- 商品卡外框和价格按钮只保留一层权威 Sprite；价格、货币图标与售罄文案继续由 Snapshot 动态生成。
+- 新增 `shop_card_disabled` 与四张分类主题运行资源；源图仍来自 `design-reference/shop/v0.6.8-sliced-library/`，未新增第二套素材源。
+- 交易、限购、库存与体力逻辑未改动。
+
+## ShopPage 视觉回归修复（v0.6.9）
+
+- v0.6.8 运行时切片中存在少量相邻素材串入：分隔线、部分 Banner / Tab 边缘会带入红丝带或金线碎片。v0.6.9 使用源图真实 alpha 边界重新裁切，并保持已有 `.meta` / UUID 不变。
+- Shop ScrollView 增加固定浅色羊皮纸承载层，恢复方案 C 的“深色外框 + 浅色商品正文”层级；SectionTitle / Hint 继续使用深色字，但不再落在深绿色底上。
+- 双列商品卡尺寸与文字可读性提高；推荐/礼包/每日等奇数数量时最后一张自动居中。
+- Banner 的 `cover` 缩放统一由固定图片窗裁剪，禁止越界串到相邻卡片；卡片文字分区与短列表页脚位置已重新约束。
+- 交易业务仍唯一走 ShopService / CurrencyService / InventoryService / StaminaService；本轮没有复制或迁移业务状态。
+
+## ShopPage 正式美术（v0.6.8）
+
+- `design-reference/shop/v0.6.8-source/` 保存 3 张原始素材表：UI、商品图标、Banner；对应正式运行资源已经预切到 `chrome/`、`banners/`、`icons/`、`item-cards/`。
+- `ShopArt` 是商店 SpriteFrame 加载唯一入口；MainMenuShopPage 不直接写资源路径。
+- 商店使用方案 C：固定顶部标题/余额栏，正文 ScrollView 内为推荐大 Banner + 体力侧 Banner + 横向分类 Tabs + 双列商品卡。
+- Cocos 3.8.8 用户无需手工切图；直接覆盖源码/patch 后等待 Creator 导入 `.meta` 即可。
+
+## MainMenu 全屏商店（v0.6.7，导航规则已由 v0.6.11 更新）
+
+- 商店继续属于 `MainMenu.scene` 的 Page，不新增 Shop.scene；v0.6.11 起只隐藏大厅 TopHUD / Logo，复用并保留常驻 `MainMenuBottomNav`，商店内容跟随大厅长屏 `visibleDesignHeight`。
+- `ShopCatalog` 是商品定义唯一来源；`ShopService` 是每日限购、货币扣除、库存检查与道具发放唯一入口。
+- `CurrencyService` 继续唯一拥有金币/钻石；`InventoryService` 继续唯一拥有玩家物品数量；商店 UI 不保存余额、库存或购买次数。
+- 体力商品不复制到 ShopService，仍唯一走 `StaminaService.purchaseStamina()`，因此原有 5 次/日递增金币价格规则保持不变。
+- 当前分类：推荐 / 礼包 / 材料 / 外观 / 每日。推荐、礼包、材料、每日已有确定性购买闭环；外观等待 Hero 外观数据层后再开放。
+- 当前商店不包含随机抽取或概率商品。
 
 ## 英雄大系统（v0.6.1 收口，v0.6.2 延续）
 
@@ -105,8 +184,8 @@ v0.6.2 新增两条底层事实链：
 
 ## 当前已知开发重点
 
-1. 在 Cocos Creator 3.8.8 实战验证 v0.6.6：主角阵亡后防御塔应持续扣血并复活主角；塔生命不足时复活中断。
-2. 验证伙伴可追击上方任意怪物；无怪后按真实英雄移速走回固定阵位，不能瞬间跳回防线；所有职业开局移速应一致。
-3. 验证三选一同时能出现职业技能与全队属性卡；疾行/强攻/坚甲/体魄/灵巧只通过该入口永久强化本局属性，新招募英雄能继承已经获得的全队属性等级。
-4. 回归敌人普通/精英/Boss 世界血条均为红色，以及 v0.6.2 的嘲讽、印记、冻结/减速与自动技能循环。
-5. 继续实现剩余觉醒标签和英雄仓库永久培养；永久培养与本局三选一必须保持两套生命周期，不把局内等级写入永久英雄数据。
+1. 在 Cocos Creator 3.8.8 实战验证 v0.6.11 ShopPage：商店顶部使用自身 Header，底部常驻 MainMenuBottomNav，滚动内容不被底栏遮挡。
+2. 验证金币/钻石商品购买、每日限购、免费每日补给、库存入账与余额刷新；体力购买继续保持原 StaminaService 规则。
+3. 商店稳定后继续完成 HeroPage（英雄仓库）、WarehousePage（普通仓库）和 UpgradePage（防线/长期升级）的真实业务闭环。
+4. 战斗侧继续回归 v0.6.6：主角复活、伙伴自由索敌/真实回防速度、三选一属性成长、敌人红色血条。
+5. 之后再补剩余职业觉醒标签与第一章完整 Vertical Slice。

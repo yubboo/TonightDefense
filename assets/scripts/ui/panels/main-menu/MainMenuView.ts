@@ -72,6 +72,11 @@ import {
     GameSettingsPanel,
 } from '../settings/GameSettingsPanel';
 
+import type {
+    ShopOfferId,
+    ShopSnapshot,
+} from '../../../systems/economy/shop/ShopTypes';
+
 export interface MainMenuCallbacks {
     getMetaState:
         () =>
@@ -82,6 +87,17 @@ export interface MainMenuCallbacks {
 
     onBuyStamina:
         () =>
+            MainMenuActionResult;
+
+    getShopSnapshot:
+        () =>
+            ShopSnapshot;
+
+    onBuyShopOffer:
+        (
+            offerId:
+                ShopOfferId,
+        ) =>
             MainMenuActionResult;
 
     onClaimMeal:
@@ -1438,10 +1454,7 @@ export class MainMenuView {
         this.pageLayer
             .setPosition(
                 0,
-                this.activeTab ===
-                    'battle'
-                    ? 0
-                    : -5,
+                0,
                 0,
             );
     }
@@ -1472,6 +1485,9 @@ export class MainMenuView {
             tab ===
             'battle';
 
+        this.topHudRoot.active =
+            lobby;
+
         this.logoRoot.active =
             lobby;
 
@@ -1484,29 +1500,57 @@ export class MainMenuView {
                         parent:
                             this.pageLayer,
 
-                        metaState,
+                        getMetaState:
+                            () =>
+                                this.callbacks
+                                    .getMetaState(),
+
+                        getShopSnapshot:
+                            () =>
+                                this.callbacks
+                                    .getShopSnapshot(),
 
                         onBuyStamina:
-                            () => {
-                                const result =
-                                    this.callbacks
-                                        .onBuyStamina();
+                            () =>
+                                this.callbacks
+                                    .onBuyStamina(),
 
+                        onBuyOffer:
+                            (
+                                offerId,
+                            ) =>
+                                this.callbacks
+                                    .onBuyShopOffer(
+                                        offerId,
+                                    ),
+
+                        onResult:
+                            (
+                                result,
+                            ) => {
                                 this.handleMetaAction(
                                     result,
-                                    true,
+                                    false,
                                 );
+                            },
 
-                                return result;
+                        onBack:
+                            () => {
+                                this.openTab(
+                                    'battle',
+                                );
                             },
                     });
                 break;
 
             case 'hero':
                 this.currentPage =
-                    new MainMenuHeroPage(
-                        this.pageLayer,
-                    );
+                    new MainMenuHeroPage({
+                        parent:
+                            this.pageLayer,
+
+                        metaState,
+                    });
                 break;
 
             case 'warehouse':
@@ -1521,9 +1565,12 @@ export class MainMenuView {
 
             case 'upgrade':
                 this.currentPage =
-                    new MainMenuUpgradePage(
-                        this.pageLayer,
-                    );
+                    new MainMenuUpgradePage({
+                        parent:
+                            this.pageLayer,
+
+                        metaState,
+                    });
                 break;
 
             case 'battle':

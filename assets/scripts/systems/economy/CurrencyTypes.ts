@@ -8,6 +8,7 @@ export type CurrencySource =
     | 'stage-chest-2'
     | 'stage-chest-3'
     | 'stamina-purchase'
+    | 'shop-purchase'
     | 'meal'
     | 'chapter-clear'
     | 'other-reward'
